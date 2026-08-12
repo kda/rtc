@@ -1,5 +1,10 @@
 use ratatui::{DefaultTerminal, Frame};
 
+#[derive(Debug, Default)]
+pub struct App {
+    exit_requested: bool,
+}
+
 fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     loop {
         terminal.draw(render)?;
