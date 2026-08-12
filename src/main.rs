@@ -1,18 +1,19 @@
 use ratatui::{DefaultTerminal, Frame};
 
-fn app(terminal: &mut DefaultTerminal) {
+fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     loop {
-        terminal.draw(render).expect("unable to draw terminal");
-        if crossterm::event::read().expect("failed to read keyboard event").is_key_press() {
+        terminal.draw(render)?;
+        if crossterm::event::read()?.is_key_press() {
             break;
         }
     }
+    Ok(())
 }
 
 fn render(frame: &mut Frame) {
     frame.render_widget("hello world", frame.area());
 }
 
-fn main() {
-    ratatui::run(app);
+fn main() -> std::io::Result<()> {
+    ratatui::run(app)
 }
