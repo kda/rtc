@@ -8,10 +8,14 @@ use ratatui::buffer::Buffer;
 use ratatui::widgets::Widget;
 use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
+use std::collections::HashMap;
+use std::sync::LazyLock;
 
 mod calculator;
 
 use calculator::Calculator;
+use calculator::NumericBase;
+use calculator::Operation;
 
 /* kda_COMMENTED_OUT
 #[derive(Clone, Debug, Default)]
@@ -26,6 +30,43 @@ impl Widget for Display {
     }
 }
   kda_COMMENTED_OUT */
+
+pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
+    HashMap::from([
+        (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
+        (NumericBase::Hexadecimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']),
+        (NumericBase::Octal, vec!['0', '1', '2', '3', '4', '5', '6', '7']),
+        (NumericBase::Binary, vec!['0', '1']),
+    ])
+});
+
+pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
+    HashMap::from([
+        (NumericBase::Decimal, "DEC"),
+        (NumericBase::Hexadecimal, "HEX"),
+        (NumericBase::Octal, "OCT"),
+        (NumericBase::Binary, "BIN"),
+    ])
+});
+
+pub const OPERATION_KEYS: LazyLock<HashMap<char, Operation>> = LazyLock::new(|| {
+    HashMap::from([
+        ('+', Operation::Add),
+        ('-', Operation::Subtract),
+        ('*', Operation::Multiply),
+        ('/', Operation::Divide),
+    ])
+});
+
+pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
+    HashMap::from([
+        (Operation::Add, "+"),
+        (Operation::Subtract, "-"),
+        (Operation::Multiply, "*"),
+        (Operation::Divide, "/"),
+    ])
+});
+
 
 #[derive(Debug)]
 pub struct App {
@@ -94,10 +135,13 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.request_exit(),
-            KeyCode::Enter => self.calculator.update_value(),
+            KeyCode::Enter | KeyCode::Char('=') => self.calculator.update_value(),
             KeyCode::Char(c) => {
-                if calculator::NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].contains(&c) {
+                if NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].contains(&c) {
                     self.calculator.accumulate(c);
+                } else if let Some(operation) = OPERATION_KEYS.get(&c) {
+                    self.calculator.update_value();
+                    self.calculator.set_pending_operation(operation.clone());
                 }
             }
             _ => {
@@ -112,7 +156,7 @@ impl App {
 }
 
 impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    fn render(self, _area: Rect, buf: &mut Buffer) {
         // A simple display area for the calculator
         let mut location = Rect{
             x: 0,
@@ -124,8 +168,19 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
+        // Pending Operation
+        if let Some(operation) = &self.calculator.state.pending_operation {
+            location.x = 1;
+            location.y = 1;
+            location.width = 4;
+            location.height = 1;
+            Line::raw(format!("{}", OPERATION_NAMES[&operation]))
+                .right_aligned()
+                .render(location, buf);
+        }
+
         // Accumulator
-        location.x = 1;
+        location.x = 6;
         location.y = 1;
         location.width = 28;
         location.height = 1;
@@ -143,7 +198,7 @@ impl Widget for &App {
             .render(location, buf);
 
         // numeric base
-        let mut location = Rect{
+        location = Rect{
             x: 1,
             y: 3,
             width: 3,
@@ -152,7 +207,7 @@ impl Widget for &App {
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(location, buf);
-        Line::raw(format!("{}", calculator::NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
+        Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
             .render(location, buf);
     }
 }
