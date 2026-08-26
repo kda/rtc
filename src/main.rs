@@ -31,8 +31,6 @@ impl Widget for Display {
 pub struct App {
     exit_requested: bool,
     size: Size,
-    //display: Display,
-    //widgets: Vec<Box<dyn Widget>>,
     calculator: Calculator,
 }
 
@@ -96,7 +94,14 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.request_exit(),
-            _ => {}
+            KeyCode::Enter => self.calculator.update_value(),
+            KeyCode::Char(c) => {
+                if calculator::NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].contains(&c) {
+                    self.calculator.accumulate(c);
+                }
+            }
+            _ => {
+            }
         }
     }
 
@@ -117,6 +122,15 @@ impl Widget for &App {
         };
         Block::bordered()
             .border_type(BorderType::Rounded)
+            .render(location, buf);
+
+        // Accumulator
+        location.x = 1;
+        location.y = 1;
+        location.width = 28;
+        location.height = 1;
+        Line::raw(format!("{}", self.calculator.state.accumulator))
+            .left_aligned()
             .render(location, buf);
 
         // Current value
