@@ -112,7 +112,7 @@ impl Widget for &App {
         let mut location = Rect{
             x: 0,
             y: 0,
-            width: 40,
+            width: 30,
             height: 5,
         };
         Block::bordered()
@@ -121,11 +121,24 @@ impl Widget for &App {
 
         // Current value
         location.x = 0;
-        location.y = 1;
-        location.width = 38;
+        location.y = 2;
+        location.width = 28;
         location.height = 1;
         Line::raw(format!("{}", self.calculator.state.value))
             .right_aligned()
+            .render(location, buf);
+
+        // numeric base
+        let mut location = Rect{
+            x: 1,
+            y: 3,
+            width: 3,
+            height: 1,
+        };
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .render(location, buf);
+        Line::raw(format!("{}", calculator::NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
             .render(location, buf);
     }
 }

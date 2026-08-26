@@ -16,7 +16,7 @@ impl Calculator {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-enum NumericBase {
+pub enum NumericBase {
     Decimal,
     Hexadecimal,
     Octal,
@@ -32,7 +32,7 @@ const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::n
     ])
 });
 
-const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
+pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, "DEC"),
         (NumericBase::Hexadecimal, "HEX"),
