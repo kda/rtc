@@ -20,28 +20,24 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct Calculator {
-    mode: Mode,
+    _mode: Mode,
     pub state: State,
 }
 
 impl Calculator {
     pub fn new() -> Self {
         Self{
-            mode: Mode::Accumulate,
+            _mode: Mode::Accumulate,
             state: State::new(),
         }
     }
 
-    pub fn accumulate(&mut self, c: char) {
-        if self.mode == Mode::Accumulate {
-            self.state.accumulator.push(c);
-        }
+    pub fn set_accumulator(&mut self, value: i128) {
+        self.state.accumulator = Some(value);
     }
 
-    pub fn unaccumulate(&mut self) {
-        if ! self.state.accumulator.is_empty() {
-            self.state.accumulator.pop();
-        }
+    pub fn clear_accumulator(&mut self) {
+        self.state.accumulator = None;
     }
 
     pub fn set_pending_operation(&mut self, operation: Operation) {
@@ -49,8 +45,7 @@ impl Calculator {
     }
 
     pub fn update_value(&mut self) {
-        if self.state.accumulator.len() > 0 {
-            let value = self.state.accumulator.parse::<i128>().unwrap();
+        if let Some(value) = self.state.accumulator {
             if let Some(operation) = &self.state.pending_operation {
                 match operation {
                     Operation::Add => self.state.value += value,
@@ -69,13 +64,17 @@ impl Calculator {
             }
 
             // clean up
-            self.state.accumulator.clear();
+            self.state.accumulator = None;
             self.state.pending_operation = None;
         }
     }
 
     pub fn clear(&mut self) {
         self.state.clear();
+    }
+
+    pub fn set_numeric_base(&mut self, numeric_base: NumericBase) {
+        self.state.numeric_base = numeric_base;
     }
 }
 
@@ -91,7 +90,7 @@ pub enum NumericBase {
 pub struct State {
     pub value: i128,
     pub numeric_base: NumericBase,
-    pub accumulator: String,
+    pub accumulator: Option<i128>,
     pub pending_operation: Option<Operation>,
     pub error: Option<Error>,
 }
@@ -106,7 +105,7 @@ impl State {
 
     pub fn clear(&mut self) {
         self.value = 0;
-        self.accumulator.clear();
+        self.accumulator = None;
         self.pending_operation = None;
         self.error = None;
     }
