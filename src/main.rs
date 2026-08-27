@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
-    prelude::{Line, Position, Size},
+    prelude::{Line, Position, Size, Text},
 };
 use ratatui::layout::Rect;
 use ratatui::buffer::Buffer;
@@ -16,20 +16,8 @@ mod calculator;
 use calculator::Calculator;
 use calculator::NumericBase;
 use calculator::Operation;
+use calculator::Error;
 
-/* kda_COMMENTED_OUT
-#[derive(Clone, Debug, Default)]
-pub struct Display {
-    //widgets: Vec<dyn Widget>,
-}
-
-impl Widget for Display {
-    fn render(self, area: Rect, buffer: &mut Buffer) {
-        let output = format!("w: {} h: {}", self.size.width, self.size.height);
-        frame.render_widget(output, frame.area());
-    }
-}
-  kda_COMMENTED_OUT */
 
 pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
@@ -67,6 +55,12 @@ pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(||
     ])
 });
 
+pub const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
+    HashMap::from([
+        (Error::DivideByZero, "divide by zero"),
+    ])
+});
+
 
 #[derive(Debug)]
 pub struct App {
@@ -79,21 +73,12 @@ impl App {
     fn new() -> Self {
         Self {
             exit_requested: false,
-            //width: 80,
-            //height: 80,
             size: Size::default(),
-            //widgets: Vec::new(),
-            //display: Display::default(),
             calculator: Calculator::new(),
         }
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-        /* kda_COMMENTED_OUT
-        println!("yo, world!"));
-        println!("terminal.size(): {:?}", terminal.size());
-        return Ok(());
-          kda_COMMENTED_OUT */
         self.size = terminal.size()?;
 
         while !self.exit_requested {
@@ -104,17 +89,6 @@ impl App {
     }
 
     fn draw(&self, frame: &mut Frame) {
-        //let output = format!("w: {} h: {}", self.size.width, self.size.height);
-        //frame.render_widget(output, frame.area());
-        /* kda_COMMENTED_OUT
-        for widget in self.widgets {
-            frame.render_widget(*widget, frame.area());
-        }
-          kda_COMMENTED_OUT */
-        //frame.render_widget(self.display.clone(), frame.area());
-        /* kda_COMMENTED_OUT
-        frame.render_widget(Display::default(), frame.area());
-          kda_COMMENTED_OUT */
         frame.render_widget(self, frame.area());
         frame.set_cursor_position(Position{x: self.size.width - 1, y: self.size.height - 1});
     }
@@ -134,6 +108,14 @@ impl App {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
+            KeyCode::Backspace => {
+                if self.calculator.state.error.is_none() {
+                    self.calculator.unaccumulate();
+                } else {
+                    self.calculator.clear();
+                }
+            }
+            KeyCode::Esc => self.calculator.clear(),
             KeyCode::Char('q') => self.request_exit(),
             KeyCode::Enter | KeyCode::Char('=') => self.calculator.update_value(),
             KeyCode::Char(c) => {
@@ -168,34 +150,31 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
-        // Pending Operation
-        if let Some(operation) = &self.calculator.state.pending_operation {
+        if let Some(error) = &self.calculator.state.error {
+            location.x = 1;
+            location.y = 2;
+            location.width = 29;
+            location.height = 1;
+            Line::raw(format!("{}", ERROR_NAMES[&error]))
+                .centered()
+                .render(location, buf);
+        } else {
             location.x = 1;
             location.y = 1;
-            location.width = 4;
-            location.height = 1;
-            Line::raw(format!("{}", OPERATION_NAMES[&operation]))
-                .right_aligned()
-                .render(location, buf);
+            location.width = 28;
+            location.height = 2;
+            let mut text = Text::default();
+            let mut line = Line::default();
+            if let Some(operation) = &self.calculator.state.pending_operation {
+                line.push_span(format!("{:>4} ", OPERATION_NAMES[&operation]));
+            } else {
+                line.push_span("     ");
+            }
+            line.push_span(&self.calculator.state.accumulator);
+            text.push_line(line);
+            text.push_line(Line::raw(format!("{}", self.calculator.state.value)).right_aligned());
+            text.render(location, buf);
         }
-
-        // Accumulator
-        location.x = 6;
-        location.y = 1;
-        location.width = 28;
-        location.height = 1;
-        Line::raw(format!("{}", self.calculator.state.accumulator))
-            .left_aligned()
-            .render(location, buf);
-
-        // Current value
-        location.x = 0;
-        location.y = 2;
-        location.width = 28;
-        location.height = 1;
-        Line::raw(format!("{}", self.calculator.state.value))
-            .right_aligned()
-            .render(location, buf);
 
         // numeric base
         location = Rect{
@@ -209,6 +188,10 @@ impl Widget for &App {
             .render(location, buf);
         Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
             .render(location, buf);
+
+        // Valid keys (quick reference)
+        // Digits
+
     }
 }
 

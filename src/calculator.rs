@@ -13,6 +13,11 @@ pub enum Operation {
     Divide,
 }
 
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub enum Error {
+    DivideByZero,
+}
+
 #[derive(Debug)]
 pub struct Calculator {
     mode: Mode,
@@ -33,6 +38,12 @@ impl Calculator {
         }
     }
 
+    pub fn unaccumulate(&mut self) {
+        if ! self.state.accumulator.is_empty() {
+            self.state.accumulator.pop();
+        }
+    }
+
     pub fn set_pending_operation(&mut self, operation: Operation) {
         self.state.pending_operation = Some(operation);
     }
@@ -45,7 +56,13 @@ impl Calculator {
                     Operation::Add => self.state.value += value,
                     Operation::Subtract => self.state.value -= value,
                     Operation::Multiply => self.state.value *= value,
-                    Operation::Divide => self.state.value /= value,
+                    Operation::Divide => {
+                        if value == 0 {
+                            self.state.error = Some(Error::DivideByZero);
+                            return;
+                        }
+                        self.state.value /= value
+                    }
                 }
             } else {
                 self.state.value = value;
@@ -56,31 +73,41 @@ impl Calculator {
             self.state.pending_operation = None;
         }
     }
+
+    pub fn clear(&mut self) {
+        self.state.clear();
+    }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub enum NumericBase {
-    Decimal,
+    #[default] Decimal,
     Hexadecimal,
     Octal,
     Binary,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct State {
     pub value: i128,
     pub numeric_base: NumericBase,
     pub accumulator: String,
     pub pending_operation: Option<Operation>,
+    pub error: Option<Error>,
 }
 
 impl State {
     fn new() -> Self {
-        Self{
-            value: 0,
-            numeric_base: NumericBase::Decimal,
-            accumulator: String::new(),
-            pending_operation: None,
-        }
+        let mut retval = Self::default();
+        // A little ugly, but ensures default state matches
+        retval.clear();
+        retval
+    }
+
+    pub fn clear(&mut self) {
+        self.value = 0;
+        self.accumulator.clear();
+        self.pending_operation = None;
+        self.error = None;
     }
 }
