@@ -44,6 +44,7 @@ pub const OPERATION_KEYS: LazyLock<HashMap<char, Operation>> = LazyLock::new(|| 
         ('-', Operation::Subtract),
         ('*', Operation::Multiply),
         ('/', Operation::Divide),
+        ('%', Operation::Modulo),
     ])
 });
 
@@ -53,6 +54,7 @@ pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(||
         (Operation::Subtract, "-"),
         (Operation::Multiply, "*"),
         (Operation::Divide, "/"),
+        (Operation::Modulo, "%"),
     ])
 });
 
@@ -262,6 +264,19 @@ impl Widget for &App {
         let digits: String = NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].iter().map(|c| format!(" {c}")).collect();
         line.push_span(digits);
         text.push_line(line.centered());
+
+        // Basic Operations
+        line = Line::default();
+        line.push_span("+ - * / %");
+        text.push_line(line.centered());
+
+        // Always present
+        line = Line::default();
+        const width: usize = 8;
+        line.push_span(format!("{:<1$}", "q: quit", width));
+        line.push_span(format!("{:<1$}", "?: help", width));
+        text.push_line(line.centered());
+
         text.render(location, buf);
 
     }

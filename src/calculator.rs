@@ -11,6 +11,7 @@ pub enum Operation {
     Subtract,
     Multiply,
     Divide,
+    Modulo,
 }
 
 #[derive(Debug, Eq, Hash, PartialEq)]
@@ -57,6 +58,13 @@ impl Calculator {
                             return;
                         }
                         self.state.value /= value
+                    }
+                    Operation::Modulo => {
+                        if value == 0 {
+                            self.state.error = Some(Error::DivideByZero);
+                            return;
+                        }
+                        self.state.value %= value
                     }
                 }
             } else {
