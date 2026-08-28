@@ -272,9 +272,9 @@ impl Widget for &App {
 
         // Always present
         line = Line::default();
-        const width: usize = 8;
-        line.push_span(format!("{:<1$}", "q: quit", width));
-        line.push_span(format!("{:<1$}", "?: help", width));
+        const WIDTH: usize = 8;
+        line.push_span(format!("{:<1$}", "q: quit", WIDTH));
+        line.push_span(format!("{:<1$}", "?: help", WIDTH));
         text.push_line(line.centered());
 
         text.render(location, buf);
