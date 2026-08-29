@@ -19,6 +19,21 @@ pub enum Error {
     DivideByZero,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub enum NumericBase {
+    #[default] Decimal,
+    Hexadecimal,
+    Octal,
+    Binary,
+}
+
+#[derive(Copy, Clone, Debug, Default, Eq, Hash, PartialEq, Ord, PartialOrd)]
+pub enum NumericMode {
+    #[default]Integer,
+    Decimal,
+    Scientific,
+}
+
 #[derive(Debug)]
 pub struct Calculator {
     _mode: Mode,
@@ -84,14 +99,10 @@ impl Calculator {
     pub fn set_numeric_base(&mut self, numeric_base: NumericBase) {
         self.state.numeric_base = numeric_base;
     }
-}
 
-#[derive(Debug, Default, PartialEq, Eq, Hash)]
-pub enum NumericBase {
-    #[default] Decimal,
-    Hexadecimal,
-    Octal,
-    Binary,
+    pub fn set_numeric_mode(&mut self, numeric_mode: NumericMode) {
+        self.state.numeric_mode = numeric_mode;
+    }
 }
 
 #[derive(Debug, Default)]
@@ -101,6 +112,7 @@ pub struct State {
     pub accumulator: Option<i128>,
     pub pending_operation: Option<Operation>,
     pub error: Option<Error>,
+    pub numeric_mode: NumericMode,
 }
 
 impl State {

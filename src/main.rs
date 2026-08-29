@@ -11,16 +11,18 @@ use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
 use std::collections::HashMap;
 use std::sync::LazyLock;
+//use std::ops::Deref;
 
 mod calculator;
 
 use calculator::Calculator;
 use calculator::NumericBase;
+use calculator::NumericMode;
 use calculator::Operation;
 use calculator::Error;
 
 
-pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
+pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
         (NumericBase::Hexadecimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']),
@@ -29,12 +31,46 @@ pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLoc
     ])
 });
 
+pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::new(|| {
+    HashMap::from([
+        ('D', NumericBase::Decimal),
+        ('H', NumericBase::Hexadecimal),
+        ('O', NumericBase::Octal),
+        ('B', NumericBase::Binary),
+    ])
+});
+
+pub const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
+    HashMap::from([
+        (NumericBase::Decimal, "Dec"),
+        (NumericBase::Hexadecimal, "Hex"),
+        (NumericBase::Octal, "Oct"),
+        (NumericBase::Binary, "Bin"),
+    ])
+});
+
 pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
-        (NumericBase::Decimal, "DEC"),
-        (NumericBase::Hexadecimal, "HEX"),
-        (NumericBase::Octal, "OCT"),
-        (NumericBase::Binary, "BIN"),
+        (NumericBase::Decimal, "DEC (10)"),
+        (NumericBase::Hexadecimal, "HEX (16)"),
+        (NumericBase::Octal, "OCT (8)"),
+        (NumericBase::Binary, "BIN (2)"),
+    ])
+});
+
+pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
+    HashMap::from([
+        ('I', NumericMode::Integer),
+        ('A', NumericMode::Decimal),
+        ('S', NumericMode::Scientific),
+    ])
+});
+
+pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
+    HashMap::from([
+        (NumericMode::Integer, "int"),
+        (NumericMode::Decimal, "dec"),
+        (NumericMode::Scientific, "sci"),
     ])
 });
 
@@ -126,22 +162,22 @@ impl App {
             }
             KeyCode::Esc => self.calculator.clear(),
             KeyCode::Char('q') => self.request_exit(),
-            KeyCode::Char('B') => self.transition_numeric_base(NumericBase::Binary),
-            KeyCode::Char('D') => self.transition_numeric_base(NumericBase::Decimal),
-            KeyCode::Char('H') => self.transition_numeric_base(NumericBase::Hexadecimal),
-            KeyCode::Char('O') => self.transition_numeric_base(NumericBase::Octal),
             KeyCode::Enter | KeyCode::Char('=') => {
                 self.calculator.update_value();
                 self.accumulator.clear();
                 self.parse_and_update_accumulator();
             },
             KeyCode::Char(c) => {
-                if NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].contains(&c) {
+                if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.numeric_base].contains(&c) {
                     self.accumulator.push(c);
                 } else if let Some(operation) = OPERATION_KEYS.get(&c) {
                     self.calculator.update_value();
                     self.calculator.set_pending_operation(operation.clone());
                     self.accumulator.clear();
+                } else if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
+                    self.calculator.set_numeric_base(*base);
+                } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
+                    self.calculator.set_numeric_mode(*mode);
                 }
                 self.parse_and_update_accumulator();
             }
@@ -179,6 +215,7 @@ impl App {
         }
     }
 
+/* kda_COMMENTED_OUT
     fn transition_numeric_base(&mut self, numeric_base: NumericBase) {
         self.parse_and_update_accumulator();
         self.calculator.set_numeric_base(numeric_base);
@@ -188,6 +225,7 @@ impl App {
             self.accumulator.clear();
         }
     }
+  kda_COMMENTED_OUT */
 }
 
 const DISPLAY_X: u16 = 0;
@@ -240,11 +278,23 @@ impl Widget for &App {
         location = Rect{
             x: 1,
             y: 3,
-            width: 3,
+            width: 8,
             height: 1,
         };
         Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
             .render(location, buf);
+
+        // numeric mode
+        location = Rect{
+            x: DISPLAY_WIDTH - 4,
+            y: 3,
+            width: 3,
+            height: 1,
+        };
+        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.state.numeric_mode]))
+            .right_aligned()
+            .render(location, buf);
+
 
         // Valid keys (quick reference)
         location.x = 0;
@@ -261,7 +311,7 @@ impl Widget for &App {
         location.height = 18;
         let mut text = Text::default();
         let mut line = Line::default();
-        let digits: String = NUMERIC_BASE_KEYS[&self.calculator.state.numeric_base].iter().map(|c| format!(" {c}")).collect();
+        let digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.numeric_base].iter().map(|c| format!(" {c}")).collect();
         line.push_span(digits);
         text.push_line(line.centered());
 
@@ -269,6 +319,45 @@ impl Widget for &App {
         line = Line::default();
         line.push_span("+ - * / %");
         text.push_line(line.centered());
+
+        // Numeric Base
+        line = Line::default();
+        let nbh_binding = NUMERIC_BASE_HELP;
+        let mut bases: Vec<_> = nbh_binding.keys().collect();
+        bases.sort_unstable();
+        for base in bases {
+            if *base != self.calculator.state.numeric_base {
+                let nbk_binding = NUMERIC_BASE_KEYS;
+                let key = nbk_binding.iter()
+                    .find(|&(_, val_base)| val_base == base)
+                    .map(|(key, _)| key);
+                if line.width() > 0 {
+                    line.push_span("  ");
+                }
+                line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_BASE_HELP[base]));
+            }
+        }
+        text.push_line(line.centered());
+
+        // Numeric Mode
+        line = Line::default();
+        let nmn_binding = NUMERIC_MODE_NAMES;
+        let mut modes: Vec<_> = nmn_binding.keys().collect();
+        modes.sort_unstable();
+        for mode in modes {
+            if *mode != self.calculator.state.numeric_mode {
+                let nmk_binding = NUMERIC_MODE_KEYS;
+                let key = nmk_binding.iter()
+                    .find(|&(_, val_mode)| val_mode == mode)
+                    .map(|(key, _)| key);
+                if line.width() > 0 {
+                    line.push_span("  ");
+                }
+                line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
+            }
+        }
+        text.push_line(line.centered());
+
 
         // Always present
         line = Line::default();
