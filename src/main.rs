@@ -270,7 +270,7 @@ impl Widget for &App {
                 line.push_span(self.format_value(value));
             }
             text.push_line(line);
-            text.push_line(Line::raw(self.format_value(self.calculator.state.value)).right_aligned());
+            text.push_line(Line::raw(self.format_value(self.calculator.state.get_value())).right_aligned());
             text.render(location, buf);
         }
 
@@ -291,7 +291,7 @@ impl Widget for &App {
             width: 3,
             height: 1,
         };
-        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.state.numeric_mode]))
+        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.state.get_numeric_mode()]))
             .right_aligned()
             .render(location, buf);
 
@@ -345,7 +345,7 @@ impl Widget for &App {
         let mut modes: Vec<_> = nmn_binding.keys().collect();
         modes.sort_unstable();
         for mode in modes {
-            if *mode != self.calculator.state.numeric_mode {
+            if *mode != self.calculator.state.get_numeric_mode() {
                 let nmk_binding = NUMERIC_MODE_KEYS;
                 let key = nmk_binding.iter()
                     .find(|&(_, val_mode)| val_mode == mode)

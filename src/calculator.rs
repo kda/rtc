@@ -107,20 +107,27 @@ impl Calculator {
 
 #[derive(Debug, Default)]
 pub struct State {
-    pub value: i128,
+    value: i128,
     pub numeric_base: NumericBase,
     pub accumulator: Option<i128>,
     pub pending_operation: Option<Operation>,
     pub error: Option<Error>,
-    pub numeric_mode: NumericMode,
+    numeric_mode: NumericMode,
 }
 
 impl State {
     fn new() -> Self {
         let mut retval = Self::default();
-        // A little ugly, but ensures default state matches
         retval.clear();
         retval
+    }
+
+    pub fn get_value(&self) -> i128 {
+        return self.value;
+    }
+
+    pub fn get_numeric_mode(&self) -> NumericMode {
+        return self.numeric_mode;
     }
 
     pub fn clear(&mut self) {
