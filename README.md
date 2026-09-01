@@ -1,5 +1,7 @@
-# tuicalc
-Text User Interface Calculator
+# rtc
+Rust Text Calculator
+
+Text-based calculator written in Rust.
 
 
 # todo
