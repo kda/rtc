@@ -61,7 +61,7 @@ pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::n
 pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
     HashMap::from([
         ('I', NumericMode::Integer),
-        ('A', NumericMode::Decimal),
+        ('A', NumericMode::Float),
         ('S', NumericMode::Scientific),
     ])
 });
@@ -69,7 +69,7 @@ pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::ne
 pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericMode::Integer, "int"),
-        (NumericMode::Decimal, "dec"),
+        (NumericMode::Float, "dec"),
         (NumericMode::Scientific, "sci"),
     ])
 });
@@ -172,6 +172,10 @@ impl App {
                 self.parse_and_update_accumulator();
             },
             KeyCode::Char('.') => {
+                if self.calculator.get_numeric_mode() != NumericMode::Integer && self.accumulator.find('.').is_none() {
+                    self.accumulator.push('.');
+                    self.parse_and_update_accumulator();
+                }
             }
             KeyCode::Char('E') => {
             }
@@ -198,14 +202,6 @@ impl App {
         self.exit_requested = true;
     }
 
-    fn format_value(&self, value: i128) -> String {
-        match self.calculator.state.get_numeric_base() {
-            NumericBase::Decimal => format!("{}", value).into(),
-            NumericBase::Hexadecimal => format!("{:x}", value).into(),
-            NumericBase::Octal => format!("{:o}", value).into(),
-            NumericBase::Binary => format!("{:b}", value).into(),
-        }
-    }
     fn format_value_pair(&self, value: calculator::ValuePair) -> String {
         match value.get_numeric_mode() {
             NumericMode::Integer => match self.calculator.state.get_numeric_base() {
@@ -215,11 +211,11 @@ impl App {
                 NumericBase::Binary => format!("{:b}", value.get_integer()).into(),
             }
             // untested
-            NumericMode::Decimal => match self.calculator.state.get_numeric_base() {
+            NumericMode::Float => match self.calculator.state.get_numeric_base() {
                 // untested
                 NumericBase::Decimal => format!("{:.1$}", value.get_decimal(), self.significant_digits).into(),
                 //NumericBase::Hexadecimal => format!("{}", value.get_decimal()).into(),
-                NumericBase::Hexadecimal => panic!("unsupported"),
+                NumericBase::Hexadecimal => panic!("unimplemented"),
                 NumericBase::Octal => format!("{:o}", value.get_decimal().to_bits()).into(),
                 NumericBase::Binary => format!("{:b}", value.get_decimal().to_bits()).into(),
             }
@@ -227,7 +223,7 @@ impl App {
             NumericMode::Scientific => match self.calculator.state.get_numeric_base() {
                 // untested
                 NumericBase::Decimal => {
-                    let mut result: String = format!("{:+e}", value.get_decimal()).into();
+                    let mut result: String = format!("{:e}", value.get_decimal()).into();
                     if let Some(pos) = result.find('e') {
                         let sign = result.chars().nth(pos + 1).unwrap();
                         if sign != '+' && sign != '-' {
@@ -237,28 +233,43 @@ impl App {
                     result
                 }
                 //NumericBase::Hexadecimal => format!("{}", value.get_decimal()).into(),
-                NumericBase::Hexadecimal => panic!("unsupported"),
+                NumericBase::Hexadecimal => panic!("unimplemented"),
                 //NumericBase::Octal => format!("{:o}", value.get_decimal().to_bits()).into(),
                 //NumericBase::Binary => format!("{:b}", value.get_decimal().to_bits()).into(),
-                NumericBase::Octal => panic!("unsupported"),
-                NumericBase::Binary => panic!("unsupported"),
+                NumericBase::Octal => panic!("unimplemented"),
+                NumericBase::Binary => panic!("unimplemented"),
             }
         }
     }
 
     fn parse_and_update_accumulator(&mut self) {
-        if self.accumulator.len() > 0 {
-            let radix: u32;
-            match self.calculator.state.get_numeric_base() {
-                NumericBase::Decimal => radix = 10,
-                NumericBase::Hexadecimal => radix = 16,
-                NumericBase::Octal => radix = 8,
-                NumericBase::Binary => radix = 2,
-            }
-
-            self.calculator.set_accumulator(i128::from_str_radix(&self.accumulator, radix).unwrap());
-        } else {
+        if self.accumulator.len() == 0 {
             self.calculator.clear_accumulator();
+            return
+        }
+        match self.calculator.get_numeric_mode() {
+            NumericMode::Integer => {
+                let radix: u32;
+                match self.calculator.state.get_numeric_base() {
+                    NumericBase::Decimal => radix = 10,
+                    NumericBase::Hexadecimal => radix = 16,
+                    NumericBase::Octal => radix = 8,
+                    NumericBase::Binary => radix = 2,
+                }
+                self.calculator.set_integer_accumulator(i128::from_str_radix(&self.accumulator, radix).unwrap());
+            }
+            NumericMode::Float => {
+                match self.calculator.state.get_numeric_base() {
+                    NumericBase::Decimal => self.calculator.set_decimal_accumulator(self.accumulator.parse().unwrap()),
+                    _ => panic!("unimplemented"),
+                }
+            }
+            NumericMode::Scientific => {
+                match self.calculator.state.get_numeric_base() {
+                    NumericBase::Decimal => self.calculator.set_decimal_accumulator(self.accumulator.parse().unwrap()),
+                    _ => panic!("unimplemented"),
+                }
+            }
         }
     }
 }
@@ -301,8 +312,8 @@ impl Widget for &App {
             } else {
                 line.push_span("     ");
             }
-            if let Some(value) = self.calculator.state.get_accumulator() {
-                line.push_span(self.format_value(value));
+            if let Some(value) = self.calculator.get_accumulator() {
+                line.push_span(self.format_value_pair(value));
             }
             text.push_line(line);
             text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
@@ -349,7 +360,7 @@ impl Widget for &App {
         let mut digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
         match self.calculator.get_numeric_mode() {
             NumericMode::Integer => {}
-            NumericMode::Decimal => digits.push_str(" ."),
+            NumericMode::Float => digits.push_str(" ."),
             NumericMode::Scientific => digits.push_str(" . E"),
         }
         line.push_span(digits);
