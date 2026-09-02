@@ -5,7 +5,7 @@ enum Mode {
     Accumulate,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Operation {
     Add,
     Subtract,
@@ -14,7 +14,7 @@ pub enum Operation {
     Modulo,
 }
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Error {
     DivideByZero,
 }
@@ -110,9 +110,9 @@ pub struct State {
     value: i128,
     numeric_base: NumericBase,
     // TODO: Deprecate: maybe
-    pub accumulator: Option<i128>,
-    pub pending_operation: Option<Operation>,
-    pub error: Option<Error>,
+    accumulator: Option<i128>,
+    pending_operation: Option<Operation>,
+    error: Option<Error>,
     numeric_mode: NumericMode,
 }
 
@@ -131,8 +131,20 @@ impl State {
         return self.numeric_base;
     }
 
+    pub fn get_accumulator(&self) -> Option<i128> {
+        return self.accumulator;
+    }
+
+    pub fn get_pending_operation(&self) -> Option<Operation> {
+        return self.pending_operation;
+    }
+
     pub fn get_numeric_mode(&self) -> NumericMode {
         return self.numeric_mode;
+    }
+
+    pub fn get_error(&self) -> Option<Error> {
+        return self.error;
     }
 
     pub fn clear(&mut self) {

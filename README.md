@@ -8,6 +8,7 @@ Text-based calculator written in Rust.
 ## refactor
 -   re-write keys, help, names, consider using Fixed Arrays (to avoid all copying of iters, etc)
 ## features
+-   BigText Result: cargo add ratatui tui-big-text
 -   retain values of storage registers between runs
 -   add command line parameters
 - 	add color (if terminal capable and/or if flag)

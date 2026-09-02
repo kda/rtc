@@ -150,7 +150,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Backspace => {
-                if self.calculator.state.error.is_none() {
+                if self.calculator.state.get_error().is_none() {
                     if self.accumulator.len() > 0 {
                         self.accumulator.pop();
                     }
@@ -246,7 +246,7 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
-        if let Some(error) = &self.calculator.state.error {
+        if let Some(error) = &self.calculator.state.get_error() {
             location.x = 1;
             location.y = 2;
             location.width = DISPLAY_WIDTH - 2;
@@ -261,12 +261,12 @@ impl Widget for &App {
             location.height = 2;
             let mut text = Text::default();
             let mut line = Line::default();
-            if let Some(operation) = &self.calculator.state.pending_operation {
+            if let Some(operation) = &self.calculator.state.get_pending_operation() {
                 line.push_span(format!("{:>4} ", OPERATION_NAMES[&operation]));
             } else {
                 line.push_span("     ");
             }
-            if let Some(value) = self.calculator.state.accumulator {
+            if let Some(value) = self.calculator.state.get_accumulator() {
                 line.push_span(self.format_value(value));
             }
             text.push_line(line);
@@ -322,6 +322,7 @@ impl Widget for &App {
 
         // Numeric Base
         line = Line::default();
+        line.push_span("base =>");
         let nbh_binding = NUMERIC_BASE_HELP;
         let mut bases: Vec<_> = nbh_binding.keys().collect();
         bases.sort_unstable();
@@ -337,10 +338,11 @@ impl Widget for &App {
                 line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_BASE_HELP[base]));
             }
         }
-        text.push_line(line.centered());
+        text.push_line(line.left_aligned());
 
         // Numeric Mode
         line = Line::default();
+        line.push_span("mode =>");
         let nmn_binding = NUMERIC_MODE_NAMES;
         let mut modes: Vec<_> = nmn_binding.keys().collect();
         modes.sort_unstable();
@@ -356,7 +358,7 @@ impl Widget for &App {
                 line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
             }
         }
-        text.push_line(line.centered());
+        text.push_line(line.left_aligned());
 
 
         // Always present
