@@ -8,7 +8,6 @@ Text-based calculator written in Rust.
 ## refactor
 -   re-write keys, help, names, consider using Fixed Arrays (to avoid all copying of iters, etc)
 ## features
--   BigText Result: cargo add ratatui tui-big-text
 -   support upper case hex display
 -   support upper case e in scientific display (maybe same as hex UPPER)
 -   retain values of storage registers between runs
@@ -21,3 +20,9 @@ Text-based calculator written in Rust.
 ## command line arguments
 -   optionally retain values of storage registers between runs
 -   clear screen (before, after)
+
+## discarded attempts
+-   BigText Result: cargo add ratatui tui-big-text
+    - Octant size did not render correctly
+    - Sextant did not either
+    - Quadrant was too big

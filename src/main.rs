@@ -270,6 +270,11 @@ impl App {
             }
             NumericMode::Scientific => {
                 match self.calculator.state.get_numeric_base() {
+                    NumericBase::Decimal => {
+                        if let Ok(value) = self.accumulator.parse() {
+                            self.calculator.set_decimal_accumulator(value);
+                        }
+                    }
                     _ => panic!("unimplemented"),
                 }
             }
@@ -296,6 +301,7 @@ impl Widget for &App {
             .render(location, buf);
 
         if let Some(error) = &self.calculator.state.get_error() {
+            // error
             location.x = 1;
             location.y = 2;
             location.width = DISPLAY_WIDTH - 2;
@@ -304,10 +310,11 @@ impl Widget for &App {
                 .centered()
                 .render(location, buf);
         } else {
+            // accumulator and pending operation
             location.x = 1;
             location.y = 1;
             location.width = DISPLAY_WIDTH - 2;
-            location.height = 2;
+            location.height = 8;
             let mut text = Text::default();
             let mut line = Line::default();
             if let Some(operation) = &self.calculator.state.get_pending_operation() {
@@ -329,7 +336,7 @@ impl Widget for &App {
         // numeric base
         location = Rect{
             x: 1,
-            y: 3,
+            y: DISPLAY_HEIGHT - 2,
             width: 8,
             height: 1,
         };
@@ -339,7 +346,7 @@ impl Widget for &App {
         // numeric mode
         location = Rect{
             x: DISPLAY_WIDTH - 4,
-            y: 3,
+            y: DISPLAY_HEIGHT - 2,
             width: 3,
             height: 1,
         };
@@ -350,15 +357,16 @@ impl Widget for &App {
 
         // Valid keys (quick reference)
         location.x = 0;
-        location.y = 5;
+        location.y = DISPLAY_HEIGHT;
         location.width = DISPLAY_WIDTH;
         location.height = 20;
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(location, buf);
+
         // Digits
         location.x = 1;
-        location.y = 6;
+        location.y = DISPLAY_HEIGHT + 1;
         location.width = DISPLAY_WIDTH - 2;
         location.height = 18;
         let mut text = Text::default();
