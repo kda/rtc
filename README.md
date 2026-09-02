@@ -9,6 +9,8 @@ Text-based calculator written in Rust.
 -   re-write keys, help, names, consider using Fixed Arrays (to avoid all copying of iters, etc)
 ## features
 -   BigText Result: cargo add ratatui tui-big-text
+-   support upper case hex display
+-   support upper case e in scientific display (maybe same as hex UPPER)
 -   retain values of storage registers between runs
 -   add command line parameters
 - 	add color (if terminal capable and/or if flag)

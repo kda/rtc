@@ -1,6 +1,5 @@
-#[derive(Debug)]
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Mode {
     Accumulate,
 }
@@ -83,7 +82,8 @@ impl Calculator {
                     }
                 }
             } else {
-                self.state.value = value;
+                //self.state.value = value;
+                self.state.value.set(value);
             }
 
             // clean up
@@ -100,20 +100,84 @@ impl Calculator {
         self.state.numeric_base = numeric_base;
     }
 
+    pub fn get_numeric_mode(&self) -> NumericMode {
+        self.state.value.numeric_mode
+    }
     pub fn set_numeric_mode(&mut self, numeric_mode: NumericMode) {
-        self.state.numeric_mode = numeric_mode;
+        self.state.value.numeric_mode = numeric_mode;
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ValuePair {
+    integer: i128,
+    decimal: f64,
+    numeric_mode: NumericMode,
+}
+
+impl ValuePair {
+    fn set(&mut self, integer: i128) {
+        self.integer = integer;
+        self.decimal = integer as f64;
+        self.numeric_mode = NumericMode::Integer;
+    }
+    pub fn get_integer(&self) -> i128 {
+        self.integer
+    }
+    pub fn get_numeric_mode(&self) -> NumericMode {
+        self.numeric_mode
+    }
+    pub fn get_decimal(&self) -> f64 {
+        self.decimal
+    }
+}
+
+use std::ops::AddAssign;
+impl AddAssign<i128> for ValuePair {
+    fn add_assign(&mut self, other: i128) {
+        self.set(self.integer + other);
+    }
+}
+
+use std::ops::SubAssign;
+impl SubAssign<i128> for ValuePair {
+    fn sub_assign(&mut self, other: i128) {
+        self.set(self.integer - other);
+    }
+}
+
+use std::ops::MulAssign;
+impl MulAssign<i128> for ValuePair {
+    fn mul_assign(&mut self, other: i128) {
+        self.set(self.integer * other);
+    }
+}
+
+use std::ops::DivAssign;
+impl DivAssign<i128> for ValuePair {
+    fn div_assign(&mut self, other: i128) {
+        self.set(self.integer / other);
+    }
+}
+
+use std::ops::RemAssign;
+impl RemAssign<i128> for ValuePair {
+    fn rem_assign(&mut self, other: i128) {
+        self.set(self.integer % other);
     }
 }
 
 #[derive(Debug, Default)]
 pub struct State {
-    value: i128,
+    //value: i128,
+    value: ValuePair,
     numeric_base: NumericBase,
     // TODO: Deprecate: maybe
     accumulator: Option<i128>,
+    //accumulator: Option<ValuePair>,
     pending_operation: Option<Operation>,
     error: Option<Error>,
-    numeric_mode: NumericMode,
+    //numeric_mode: NumericMode,
 }
 
 impl State {
@@ -123,7 +187,7 @@ impl State {
         retval
     }
 
-    pub fn get_value(&self) -> i128 {
+    pub fn get_value(&self) -> ValuePair {
         return self.value;
     }
 
@@ -139,16 +203,18 @@ impl State {
         return self.pending_operation;
     }
 
+/* kda_COMMENTED_OUT
     pub fn get_numeric_mode(&self) -> NumericMode {
         return self.numeric_mode;
     }
+  kda_COMMENTED_OUT */
 
     pub fn get_error(&self) -> Option<Error> {
         return self.error;
     }
 
     pub fn clear(&mut self) {
-        self.value = 0;
+        self.value.set(0);
         self.accumulator = None;
         self.pending_operation = None;
         self.error = None;

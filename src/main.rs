@@ -107,6 +107,9 @@ pub struct App {
     size: Size,
     calculator: Calculator,
     accumulator: String,
+
+    // Display oriented values
+    significant_digits: usize,
 }
 
 impl App {
@@ -116,6 +119,7 @@ impl App {
             size: Size::default(),
             calculator: Calculator::new(),
             accumulator: String::new(),
+            significant_digits: 2,
         }
     }
 
@@ -167,6 +171,10 @@ impl App {
                 self.accumulator.clear();
                 self.parse_and_update_accumulator();
             },
+            KeyCode::Char('.') => {
+            }
+            KeyCode::Char('E') => {
+            }
             KeyCode::Char(c) => {
                 if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
                     self.accumulator.push(c);
@@ -198,6 +206,45 @@ impl App {
             NumericBase::Binary => format!("{:b}", value).into(),
         }
     }
+    fn format_value_pair(&self, value: calculator::ValuePair) -> String {
+        match value.get_numeric_mode() {
+            NumericMode::Integer => match self.calculator.state.get_numeric_base() {
+                NumericBase::Decimal => format!("{}", value.get_integer()).into(),
+                NumericBase::Hexadecimal => format!("{:x}", value.get_integer()).into(),
+                NumericBase::Octal => format!("{:o}", value.get_integer()).into(),
+                NumericBase::Binary => format!("{:b}", value.get_integer()).into(),
+            }
+            // untested
+            NumericMode::Decimal => match self.calculator.state.get_numeric_base() {
+                // untested
+                NumericBase::Decimal => format!("{:.1$}", value.get_decimal(), self.significant_digits).into(),
+                //NumericBase::Hexadecimal => format!("{}", value.get_decimal()).into(),
+                NumericBase::Hexadecimal => panic!("unsupported"),
+                NumericBase::Octal => format!("{:o}", value.get_decimal().to_bits()).into(),
+                NumericBase::Binary => format!("{:b}", value.get_decimal().to_bits()).into(),
+            }
+            // untested
+            NumericMode::Scientific => match self.calculator.state.get_numeric_base() {
+                // untested
+                NumericBase::Decimal => {
+                    let mut result: String = format!("{:+e}", value.get_decimal()).into();
+                    if let Some(pos) = result.find('e') {
+                        let sign = result.chars().nth(pos + 1).unwrap();
+                        if sign != '+' && sign != '-' {
+                            result.insert(pos + 1, '+');
+                        }
+                    }
+                    result
+                }
+                //NumericBase::Hexadecimal => format!("{}", value.get_decimal()).into(),
+                NumericBase::Hexadecimal => panic!("unsupported"),
+                //NumericBase::Octal => format!("{:o}", value.get_decimal().to_bits()).into(),
+                //NumericBase::Binary => format!("{:b}", value.get_decimal().to_bits()).into(),
+                NumericBase::Octal => panic!("unsupported"),
+                NumericBase::Binary => panic!("unsupported"),
+            }
+        }
+    }
 
     fn parse_and_update_accumulator(&mut self) {
         if self.accumulator.len() > 0 {
@@ -214,18 +261,6 @@ impl App {
             self.calculator.clear_accumulator();
         }
     }
-
-/* kda_COMMENTED_OUT
-    fn transition_numeric_base(&mut self, numeric_base: NumericBase) {
-        self.parse_and_update_accumulator();
-        self.calculator.set_numeric_base(numeric_base);
-        if let Some(value) = self.calculator.state.accumulator {
-            self.accumulator = self.format_value(value);
-        } else {
-            self.accumulator.clear();
-        }
-    }
-  kda_COMMENTED_OUT */
 }
 
 const DISPLAY_X: u16 = 0;
@@ -270,7 +305,7 @@ impl Widget for &App {
                 line.push_span(self.format_value(value));
             }
             text.push_line(line);
-            text.push_line(Line::raw(self.format_value(self.calculator.state.get_value())).right_aligned());
+            text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
             text.render(location, buf);
         }
 
@@ -291,7 +326,7 @@ impl Widget for &App {
             width: 3,
             height: 1,
         };
-        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.state.get_numeric_mode()]))
+        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.get_numeric_mode()]))
             .right_aligned()
             .render(location, buf);
 
@@ -311,7 +346,12 @@ impl Widget for &App {
         location.height = 18;
         let mut text = Text::default();
         let mut line = Line::default();
-        let digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
+        let mut digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
+        match self.calculator.get_numeric_mode() {
+            NumericMode::Integer => {}
+            NumericMode::Decimal => digits.push_str(" ."),
+            NumericMode::Scientific => digits.push_str(" . E"),
+        }
         line.push_span(digits);
         text.push_line(line.centered());
 
@@ -347,7 +387,7 @@ impl Widget for &App {
         let mut modes: Vec<_> = nmn_binding.keys().collect();
         modes.sort_unstable();
         for mode in modes {
-            if *mode != self.calculator.state.get_numeric_mode() {
+            if *mode != self.calculator.get_numeric_mode() {
                 let nmk_binding = NUMERIC_MODE_KEYS;
                 let key = nmk_binding.iter()
                     .find(|&(_, val_mode)| val_mode == mode)
