@@ -108,7 +108,8 @@ impl Calculator {
 #[derive(Debug, Default)]
 pub struct State {
     value: i128,
-    pub numeric_base: NumericBase,
+    numeric_base: NumericBase,
+    // TODO: Deprecate: maybe
     pub accumulator: Option<i128>,
     pub pending_operation: Option<Operation>,
     pub error: Option<Error>,
@@ -124,6 +125,10 @@ impl State {
 
     pub fn get_value(&self) -> i128 {
         return self.value;
+    }
+
+    pub fn get_numeric_base(&self) -> NumericBase {
+        return self.numeric_base;
     }
 
     pub fn get_numeric_mode(&self) -> NumericMode {

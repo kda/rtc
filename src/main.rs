@@ -168,7 +168,7 @@ impl App {
                 self.parse_and_update_accumulator();
             },
             KeyCode::Char(c) => {
-                if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.numeric_base].contains(&c) {
+                if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
                     self.accumulator.push(c);
                 } else if let Some(operation) = OPERATION_KEYS.get(&c) {
                     self.calculator.update_value();
@@ -191,7 +191,7 @@ impl App {
     }
 
     fn format_value(&self, value: i128) -> String {
-        match self.calculator.state.numeric_base {
+        match self.calculator.state.get_numeric_base() {
             NumericBase::Decimal => format!("{}", value).into(),
             NumericBase::Hexadecimal => format!("{:x}", value).into(),
             NumericBase::Octal => format!("{:o}", value).into(),
@@ -202,7 +202,7 @@ impl App {
     fn parse_and_update_accumulator(&mut self) {
         if self.accumulator.len() > 0 {
             let radix: u32;
-            match self.calculator.state.numeric_base {
+            match self.calculator.state.get_numeric_base() {
                 NumericBase::Decimal => radix = 10,
                 NumericBase::Hexadecimal => radix = 16,
                 NumericBase::Octal => radix = 8,
@@ -281,7 +281,7 @@ impl Widget for &App {
             width: 8,
             height: 1,
         };
-        Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.numeric_base]))
+        Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.get_numeric_base()]))
             .render(location, buf);
 
         // numeric mode
@@ -311,7 +311,7 @@ impl Widget for &App {
         location.height = 18;
         let mut text = Text::default();
         let mut line = Line::default();
-        let digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.numeric_base].iter().map(|c| format!(" {c}")).collect();
+        let digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
         line.push_span(digits);
         text.push_line(line.centered());
 
@@ -326,7 +326,7 @@ impl Widget for &App {
         let mut bases: Vec<_> = nbh_binding.keys().collect();
         bases.sort_unstable();
         for base in bases {
-            if *base != self.calculator.state.numeric_base {
+            if *base != self.calculator.state.get_numeric_base() {
                 let nbk_binding = NUMERIC_BASE_KEYS;
                 let key = nbk_binding.iter()
                     .find(|&(_, val_base)| val_base == base)
