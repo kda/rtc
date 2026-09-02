@@ -71,9 +71,11 @@ impl Calculator {
         self.state.accumulator = None;
     }
 
+/* kda_COMMENTED_OUT
     pub fn get_accumulator(&self) -> Option<ValuePair> {
         return self.state.accumulator;
     }
+  kda_COMMENTED_OUT */
 
 
     pub fn set_pending_operation(&mut self, operation: Operation) {

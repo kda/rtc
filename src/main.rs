@@ -260,13 +260,16 @@ impl App {
             }
             NumericMode::Float => {
                 match self.calculator.state.get_numeric_base() {
-                    NumericBase::Decimal => self.calculator.set_decimal_accumulator(self.accumulator.parse().unwrap()),
+                    NumericBase::Decimal => {
+                        if let Ok(value) = self.accumulator.parse() {
+                            self.calculator.set_decimal_accumulator(value);
+                        }
+                    }
                     _ => panic!("unimplemented"),
                 }
             }
             NumericMode::Scientific => {
                 match self.calculator.state.get_numeric_base() {
-                    NumericBase::Decimal => self.calculator.set_decimal_accumulator(self.accumulator.parse().unwrap()),
                     _ => panic!("unimplemented"),
                 }
             }
@@ -312,9 +315,12 @@ impl Widget for &App {
             } else {
                 line.push_span("     ");
             }
+/* kda_COMMENTED_OUT
             if let Some(value) = self.calculator.get_accumulator() {
-                line.push_span(self.format_value_pair(value));
+                //line.push_span(self.format_value_pair(value));
             }
+  kda_COMMENTED_OUT */
+            line.push_span(&self.accumulator);
             text.push_line(line);
             text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
             text.render(location, buf);
