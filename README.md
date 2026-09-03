@@ -7,6 +7,8 @@ Text-based calculator written in Rust.
 # todo
 ## refactor
 -   re-write keys, help, names, consider using Fixed Arrays (to avoid all copying of iters, etc)
+-   reconsider BigText using width and height
+    - also, could be optional, based on command line
 ## features
 -   support upper case hex display
 -   support upper case e in scientific display (maybe same as hex UPPER)
@@ -19,6 +21,10 @@ Text-based calculator written in Rust.
 -   number of significant digits
 -   build out help system
 -   develop tests to cover all features
+-   add clap to support version and other command line flags
+-   add modal operation
+-   add 'V' to show version
+-   detect and enforce maximum length of entry of value
 ## command line arguments
 -   optionally retain values of storage registers between runs
 -   clear screen (before, after)
