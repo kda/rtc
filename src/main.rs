@@ -441,3 +441,63 @@ impl Widget for &App {
 fn main() -> std::io::Result<()> {
     ratatui::run(|terminal| App::new().run(terminal))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::App;
+    use insta::assert_snapshot;
+    use ratatui::{backend::TestBackend, Terminal};
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    struct TestApp {
+        app: App,
+        terminal: Terminal<TestBackend>,
+    }
+
+    impl TestApp {
+        fn new() -> TestApp {
+            TestApp{
+                app: App::new(),
+                terminal: Terminal::new(TestBackend::new(40, 26)).unwrap(),
+            }
+        }
+        fn render(&mut self) {
+            self.terminal
+                .draw(|frame| frame.render_widget(&self.app, frame.area()))
+                .unwrap();
+        }
+        fn backend(&self) -> &TestBackend {
+            self.terminal.backend()
+        }
+        fn handle_key(&mut self, key: char) {
+            let ke = KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE);
+            self.app.handle_key_event(ke);
+        }
+    }
+
+    #[test]
+    fn test_initial_render_app() {
+        let mut ta = TestApp::new();
+        ta.render();
+        assert_snapshot!(ta.backend());
+    }
+
+    #[test]
+    fn test_quit() {
+        let mut ta = TestApp::new();
+        ta.handle_key('q');
+        assert!(ta.app.exit_requested);
+    }
+
+    #[test]
+    fn test_hex_base_int_mode_render() {
+        let mut ta = TestApp::new();
+        ta.handle_key('1');
+        ta.handle_key('2');
+        ta.handle_key('3');
+        ta.handle_key('=');
+        ta.handle_key('H');
+        ta.render();
+        assert_snapshot!(ta.backend());
+    }
+}

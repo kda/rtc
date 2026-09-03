@@ -17,6 +17,8 @@ Text-based calculator written in Rust.
 -   modal: whole numbers or decimal or Scientific
 -   display commas (modal, also consider EURO style (.  <-> ,))
 -   number of significant digits
+-   build out help system
+-   develop tests to cover all features
 ## command line arguments
 -   optionally retain values of storage registers between runs
 -   clear screen (before, after)
