@@ -172,12 +172,19 @@ impl App {
                 self.parse_and_update_accumulator();
             },
             KeyCode::Char('.') => {
-                if self.calculator.get_numeric_mode() != NumericMode::Integer && self.accumulator.find('.').is_none() {
+                if self.calculator.get_numeric_mode() != NumericMode::Integer
+                        && self.accumulator.find('.').is_none() {
                     self.accumulator.push('.');
                     self.parse_and_update_accumulator();
                 }
             }
             KeyCode::Char('E') => {
+                // TODO: add support for capital 'E' if in caps mode
+                if self.calculator.get_numeric_mode() == NumericMode::Scientific
+                        && self.accumulator.find('e').is_none() {
+                    self.accumulator.push_str("e+");
+                    self.parse_and_update_accumulator();
+                }
             }
             KeyCode::Char(c) => {
                 if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
@@ -213,7 +220,9 @@ impl App {
             // untested
             NumericMode::Float => match self.calculator.state.get_numeric_base() {
                 // untested
-                NumericBase::Decimal => format!("{:.1$}", value.get_decimal(), self.significant_digits).into(),
+                NumericBase::Decimal => {
+                    format!("{:.1$}", value.get_decimal(), self.significant_digits).into()
+                }
                 //NumericBase::Hexadecimal => format!("{}", value.get_decimal()).into(),
                 NumericBase::Hexadecimal => panic!("unimplemented"),
                 NumericBase::Octal => format!("{:o}", value.get_decimal().to_bits()).into(),
@@ -223,7 +232,9 @@ impl App {
             NumericMode::Scientific => match self.calculator.state.get_numeric_base() {
                 // untested
                 NumericBase::Decimal => {
-                    let mut result: String = format!("{:e}", value.get_decimal()).into();
+                    let mut result: String = format!("{:.1$e}", value.get_decimal(), self.significant_digits).into();
+                    // force display of sign on exponent
+                    // TODO: support uppercase 'E'
                     if let Some(pos) = result.find('e') {
                         let sign = result.chars().nth(pos + 1).unwrap();
                         if sign != '+' && sign != '-' {
