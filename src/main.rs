@@ -21,6 +21,13 @@ use calculator::NumericMode;
 use calculator::Operation;
 use calculator::Error;
 
+#[derive(Debug)]
+enum Mode {
+    Calculating,
+    Memory,
+    SignificantDigits,
+    Help,
+}
 
 pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
@@ -101,12 +108,16 @@ pub const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
 });
 
 
+const NUMBER_OF_REGISTERS: usize = 10;
+
 #[derive(Debug)]
 pub struct App {
+    mode: Mode,
     exit_requested: bool,
     size: Size,
     calculator: Calculator,
     accumulator: String,
+    memory_registers: [calculator::ValuePair; NUMBER_OF_REGISTERS],
 
     // Display oriented values
     significant_digits: usize,
@@ -115,10 +126,12 @@ pub struct App {
 impl App {
     fn new() -> Self {
         Self {
+            mode: Mode::Calculating,
             exit_requested: false,
             size: Size::default(),
             calculator: Calculator::new(),
             accumulator: String::new(),
+            memory_registers: [calculator::ValuePair::default(); NUMBER_OF_REGISTERS],
             significant_digits: 2,
         }
     }
@@ -165,7 +178,6 @@ impl App {
                 self.parse_and_update_accumulator();
             }
             KeyCode::Esc => self.calculator.clear(),
-            KeyCode::Char('q') => self.request_exit(),
             KeyCode::Enter | KeyCode::Char('=') => {
                 self.calculator.update_value();
                 self.accumulator.clear();
@@ -185,6 +197,11 @@ impl App {
                     self.accumulator.push_str("e+");
                     self.parse_and_update_accumulator();
                 }
+            }
+            KeyCode::Char('q') => self.request_exit(),
+            KeyCode::Char('r') => {
+            }
+            KeyCode::Char('s') => {
             }
             KeyCode::Char(c) => {
                 if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
@@ -297,9 +314,10 @@ const DISPLAY_X: u16 = 0;
 const DISPLAY_Y: u16 = 0;
 const DISPLAY_WIDTH: u16 = 35;
 const DISPLAY_HEIGHT: u16 = 5;
+const KEYPAD_HEIGHT: u16 = 20;
 
 impl Widget for &App {
-    fn render(self, _area: Rect, buf: &mut Buffer) {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         // A simple display area for the calculator
         let mut location = Rect{
             x: DISPLAY_X,
@@ -345,22 +363,26 @@ impl Widget for &App {
         }
 
         // numeric base
+/* kda_COMMENTED_OUT
         location = Rect{
             x: 1,
             y: DISPLAY_HEIGHT - 2,
             width: 8,
             height: 1,
         };
+  kda_COMMENTED_OUT */
         Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.get_numeric_base()]))
             .render(location, buf);
 
         // numeric mode
+/* kda_COMMENTED_OUT
         location = Rect{
             x: DISPLAY_WIDTH - 4,
             y: DISPLAY_HEIGHT - 2,
             width: 3,
             height: 1,
         };
+  kda_COMMENTED_OUT */
         Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.get_numeric_mode()]))
             .right_aligned()
             .render(location, buf);
@@ -370,7 +392,7 @@ impl Widget for &App {
         location.x = 0;
         location.y = DISPLAY_HEIGHT;
         location.width = DISPLAY_WIDTH;
-        location.height = 20;
+        location.height = KEYPAD_HEIGHT;
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(location, buf);
@@ -379,7 +401,7 @@ impl Widget for &App {
         location.x = 1;
         location.y = DISPLAY_HEIGHT + 1;
         location.width = DISPLAY_WIDTH - 2;
-        location.height = 18;
+        location.height = area.height - 1;
         let mut text = Text::default();
         let mut line = Line::default();
         let mut digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
@@ -435,15 +457,19 @@ impl Widget for &App {
             }
         }
         text.push_line(line.left_aligned());
+        text.render(location, buf);
 
 
         // Always present
+        text = Text::default();
         line = Line::default();
         const WIDTH: usize = 8;
         line.push_span(format!("{:<1$}", "q: quit", WIDTH));
         line.push_span(format!("{:<1$}", "?: help", WIDTH));
         text.push_line(line.centered());
 
+        location.height = text.height() as u16;
+        location.y = KEYPAD_HEIGHT - location.height - 1;
         text.render(location, buf);
 
     }

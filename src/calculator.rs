@@ -1,8 +1,4 @@
 
-#[derive(Debug, PartialEq)]
-enum Mode {
-    Accumulate,
-}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Operation {
@@ -35,14 +31,12 @@ pub enum NumericMode {
 
 #[derive(Debug)]
 pub struct Calculator {
-    _mode: Mode,
     pub state: State,
 }
 
 impl Calculator {
     pub fn new() -> Self {
         Self{
-            _mode: Mode::Accumulate,
             state: State::new(),
         }
     }
@@ -71,11 +65,6 @@ impl Calculator {
         self.state.accumulator = None;
     }
 
-/* kda_COMMENTED_OUT
-    pub fn get_accumulator(&self) -> Option<ValuePair> {
-        return self.state.accumulator;
-    }
-  kda_COMMENTED_OUT */
 
 
     pub fn set_pending_operation(&mut self, operation: Operation) {
@@ -267,12 +256,6 @@ impl State {
     pub fn get_pending_operation(&self) -> Option<Operation> {
         return self.pending_operation;
     }
-
-/* kda_COMMENTED_OUT
-    pub fn get_numeric_mode(&self) -> NumericMode {
-        return self.numeric_mode;
-    }
-  kda_COMMENTED_OUT */
 
     pub fn get_error(&self) -> Option<Error> {
         return self.error;
