@@ -25,6 +25,6 @@ expression: ta.backend()
 "│                                 │     "
 "│                                 │     "
 "│                                 │     "
-"│        q: quit ?: help          │     "
+"│ESC: clear   ?: help      q: quit│     "
 "╰─────────────────────────────────╯     "
 "                                        "

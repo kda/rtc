@@ -193,7 +193,7 @@ impl App {
                         }
                     }
                     KeyCode::Char('E') => {
-                        // TODO: add support for capital 'E' if in caps mode
+                        // TODO: add support for display uppercase 'E' if in caps mode
                         if self.calculator.get_numeric_mode() == NumericMode::Scientific
                                 && self.accumulator.find('e').is_none() {
                             self.accumulator.push_str("e+");
@@ -406,7 +406,6 @@ impl Widget for &App {
             .right_aligned()
             .render(location, buf);
 
-
         // Valid keys (quick reference)
         location.x = 0;
         location.y = DISPLAY_HEIGHT;
@@ -416,74 +415,96 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
-        // Digits
-        location.x = 1;
-        location.y = DISPLAY_HEIGHT + 1;
-        location.width = DISPLAY_WIDTH - 2;
-        location.height = area.height - 1;
-        let mut text = Text::default();
-        let mut line = Line::default();
-        let mut digits: String =
-            NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()]
-            .iter().map(|c| format!(" {c}")).collect();
-        match self.calculator.get_numeric_mode() {
-            NumericMode::Integer => {}
-            NumericMode::Float => digits.push_str(" ."),
-            NumericMode::Scientific => digits.push_str(" . E"),
-        }
-        line.push_span(digits);
-        text.push_line(line.centered());
+        match self.mode {
+            Mode::Calculating => {
+                // Digits
+                location.x = 1;
+                location.y = DISPLAY_HEIGHT + 1;
+                location.width = DISPLAY_WIDTH - 2;
+                location.height = area.height - 1;
+                let mut text = Text::default();
+                let mut line = Line::default();
+                let mut digits: String =
+                    NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()]
+                    .iter().map(|c| format!(" {c}")).collect();
+                match self.calculator.get_numeric_mode() {
+                    NumericMode::Integer => {}
+                    NumericMode::Float => digits.push_str(" ."),
+                    NumericMode::Scientific => digits.push_str(" . E"),
+                }
+                line.push_span(digits);
+                text.push_line(line.centered());
 
-        // Basic Operations
-        line = Line::default();
-        line.push_span("+ - * / %");
-        text.push_line(line.centered());
+                // Basic Operations
+                line = Line::default();
+                line.push_span("+ - * / %");
+                text.push_line(line.centered());
 
-        // Numeric Base
-        line = Line::default();
-        line.push_span("base =>");
-        let nbh_binding = NUMERIC_BASE_HELP;
-        let mut bases: Vec<_> = nbh_binding.keys().collect();
-        bases.sort_unstable();
-        for base in bases {
-            if *base != self.calculator.state.get_numeric_base() {
-                let nbk_binding = NUMERIC_BASE_KEYS;
-                let key = nbk_binding.iter()
-                    .find(|&(_, val_base)| val_base == base)
-                    .map(|(key, _)| key);
-                line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_BASE_HELP[base]));
-            }
-        }
-        text.push_line(line.left_aligned());
+                // Numeric Base
+                line = Line::default();
+                line.push_span("base =>");
+                let nbh_binding = NUMERIC_BASE_HELP;
+                let mut bases: Vec<_> = nbh_binding.keys().collect();
+                bases.sort_unstable();
+                for base in bases {
+                    if *base != self.calculator.state.get_numeric_base() {
+                        let nbk_binding = NUMERIC_BASE_KEYS;
+                        let key = nbk_binding.iter()
+                            .find(|&(_, val_base)| val_base == base)
+                            .map(|(key, _)| key);
+                        line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_BASE_HELP[base]));
+                    }
+                }
+                text.push_line(line.left_aligned());
 
-        // Numeric Mode
-        line = Line::default();
-        line.push_span("mode =>");
-        let nmn_binding = NUMERIC_MODE_NAMES;
-        let mut modes: Vec<_> = nmn_binding.keys().collect();
-        modes.sort_unstable();
-        for mode in modes {
-            if *mode != self.calculator.get_numeric_mode() {
-                let nmk_binding = NUMERIC_MODE_KEYS;
-                let key = nmk_binding.iter()
-                    .find(|&(_, val_mode)| val_mode == mode)
-                    .map(|(key, _)| key);
-                line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
-            }
+                // Numeric Mode
+                line = Line::default();
+                line.push_span("mode =>");
+                let nmn_binding = NUMERIC_MODE_NAMES;
+                let mut modes: Vec<_> = nmn_binding.keys().collect();
+                modes.sort_unstable();
+                for mode in modes {
+                    if *mode != self.calculator.get_numeric_mode() {
+                        let nmk_binding = NUMERIC_MODE_KEYS;
+                        let key = nmk_binding.iter()
+                            .find(|&(_, val_mode)| val_mode == mode)
+                            .map(|(key, _)| key);
+                        line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
+                    }
+                }
+                if self.calculator.get_numeric_mode() != NumericMode::Integer {
+                    line.push_span(" F:sigdig");
+                }
+                text.push_line(line.left_aligned());
+                text.render(location, buf);
+            },
+            Mode::SignificantDigits => {
+                location.x = 1;
+                location.y = DISPLAY_HEIGHT + 1;
+                location.width = DISPLAY_WIDTH - 2;
+                location.height = area.height - 1;
+                let mut text = Text::default();
+                let mut line = Line::default();
+                line.push_span("number of significant digits");
+                text.push_line(line.centered());
+                line = Line::default();
+                let mut digits: String =
+                    NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]
+                    .iter().map(|c| format!(" {c}")).collect();
+                line.push_span(digits);
+                text.push_line(line.centered());
+                text.render(location, buf);
+            },
+            _ => {},
         }
-        if self.calculator.get_numeric_mode() != NumericMode::Integer {
-            line.push_span(" F:sigdig");
-        }
-        text.push_line(line.left_aligned());
-        text.render(location, buf);
-
 
         // Always present
-        text = Text::default();
-        line = Line::default();
-        const WIDTH: usize = 8;
-        line.push_span(format!("{:<1$}", "q: quit", WIDTH));
-        line.push_span(format!("{:<1$}", "?: help", WIDTH));
+        let mut text = Text::default();
+        let mut line = Line::default();
+        const WIDTH: usize = 11;
+        line.push_span(format!("{:<1$}", "ESC: clear", WIDTH));
+        line.push_span(format!("{:^1$}", "?: help", WIDTH));
+        line.push_span(format!("{:>1$}", "q: quit", WIDTH));
         text.push_line(line.centered());
 
         location.height = text.height() as u16;
