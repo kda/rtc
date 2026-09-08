@@ -237,6 +237,11 @@ impl App {
                     KeyCode::Char('2') => self.significant_digits = 2,
                     KeyCode::Char('3') => self.significant_digits = 3,
                     KeyCode::Char('4') => self.significant_digits = 4,
+                    KeyCode::Char('5') => self.significant_digits = 5,
+                    KeyCode::Char('6') => self.significant_digits = 6,
+                    KeyCode::Char('7') => self.significant_digits = 7,
+                    KeyCode::Char('8') => self.significant_digits = 8,
+                    KeyCode::Char('9') => self.significant_digits = 9,
                     _ => {}
                 }
                 self.mode = Mode::Calculating;
@@ -374,11 +379,6 @@ impl Widget for &App {
             } else {
                 line.push_span("     ");
             }
-/* kda_COMMENTED_OUT
-            if let Some(value) = self.calculator.get_accumulator() {
-                //line.push_span(self.format_value_pair(value));
-            }
-  kda_COMMENTED_OUT */
             line.push_span(&self.accumulator);
             text.push_line(line);
             text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
@@ -423,7 +423,9 @@ impl Widget for &App {
         location.height = area.height - 1;
         let mut text = Text::default();
         let mut line = Line::default();
-        let mut digits: String = NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].iter().map(|c| format!(" {c}")).collect();
+        let mut digits: String =
+            NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()]
+            .iter().map(|c| format!(" {c}")).collect();
         match self.calculator.get_numeric_mode() {
             NumericMode::Integer => {}
             NumericMode::Float => digits.push_str(" ."),
@@ -449,10 +451,7 @@ impl Widget for &App {
                 let key = nbk_binding.iter()
                     .find(|&(_, val_base)| val_base == base)
                     .map(|(key, _)| key);
-                if line.width() > 0 {
-                    line.push_span("  ");
-                }
-                line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_BASE_HELP[base]));
+                line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_BASE_HELP[base]));
             }
         }
         text.push_line(line.left_aligned());
@@ -469,11 +468,11 @@ impl Widget for &App {
                 let key = nmk_binding.iter()
                     .find(|&(_, val_mode)| val_mode == mode)
                     .map(|(key, _)| key);
-                if line.width() > 0 {
-                    line.push_span("  ");
-                }
-                line.push_span(format!("{}: {}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
+                line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
             }
+        }
+        if self.calculator.get_numeric_mode() != NumericMode::Integer {
+            line.push_span(" F:sigdig");
         }
         text.push_line(line.left_aligned());
         text.render(location, buf);
@@ -529,6 +528,11 @@ mod tests {
             let ke = KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE);
             self.app.handle_key_event(ke);
         }
+        fn handle_string(&mut self, s: &str) {
+            for c in s.chars() {
+                self.handle_key(c);
+            }
+        }
     }
 
     #[test]
@@ -548,11 +552,14 @@ mod tests {
     #[test]
     fn test_hex_base_int_mode_render() {
         let mut ta = TestApp::new();
-        ta.handle_key('1');
-        ta.handle_key('2');
-        ta.handle_key('3');
-        ta.handle_key('=');
-        ta.handle_key('H');
+        ta.handle_string("123=H");
+        ta.render();
+        assert_snapshot!(ta.backend());
+    }
+    #[test]
+    fn test_dec_base_dec_mode_render() {
+        let mut ta = TestApp::new();
+        ta.handle_string("A123.45=+4.9F5");
         ta.render();
         assert_snapshot!(ta.backend());
     }
