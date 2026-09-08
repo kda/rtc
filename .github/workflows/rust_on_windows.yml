@@ -1,4 +1,4 @@
-name: Daily Rust Run on Code Change (Windows)
+name: Windows
 
 on:
   schedule:
