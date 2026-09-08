@@ -1,9 +1,9 @@
 # rtc
-Rust Text Calculator
-
-[![Rust](https://github.com/kda/rtc/actions/workflows/rust.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust.yml)
+| :---- | ----: |
+|Rust Text Calculator|[![Rust](https://github.com/kda/rtc/actions/workflows/rust.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust.yml)|
 
 Text-based calculator written in Rust.
+
 
 
 # todo
