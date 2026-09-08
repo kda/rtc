@@ -165,60 +165,73 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Backspace => {
-                if self.calculator.state.get_error().is_none() {
-                    if self.accumulator.len() > 0 {
-                        self.accumulator.pop();
+        match self.mode {
+            Mode::Calculating => {
+                match key_event.code {
+                    KeyCode::Backspace => {
+                        if self.calculator.state.get_error().is_none() {
+                            if self.accumulator.len() > 0 {
+                                self.accumulator.pop();
+                            }
+                        } else {
+                            self.calculator.clear();
+                            self.accumulator.clear();
+                        }
+                        self.parse_and_update_accumulator();
                     }
-                } else {
-                    self.calculator.clear();
-                    self.accumulator.clear();
+                    KeyCode::Esc => self.calculator.clear(),
+                    KeyCode::Enter | KeyCode::Char('=') => {
+                        self.calculator.update_value();
+                        self.accumulator.clear();
+                        self.parse_and_update_accumulator();
+                    },
+                    KeyCode::Char('.') => {
+                        if self.calculator.get_numeric_mode() != NumericMode::Integer
+                                && self.accumulator.find('.').is_none() {
+                            self.accumulator.push('.');
+                            self.parse_and_update_accumulator();
+                        }
+                    }
+                    KeyCode::Char('E') => {
+                        // TODO: add support for capital 'E' if in caps mode
+                        if self.calculator.get_numeric_mode() == NumericMode::Scientific
+                                && self.accumulator.find('e').is_none() {
+                            self.accumulator.push_str("e+");
+                            self.parse_and_update_accumulator();
+                        }
+                    }
+                    KeyCode::Char('q') => self.request_exit(),
+                    KeyCode::Char('r') => {
+                    }
+                    KeyCode::Char('s') => {
+                    }
+                    KeyCode::Char('S') => self.mode = Mode::SignificantDigits,
+                    KeyCode::Char(c) => {
+                        if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
+                            self.accumulator.push(c);
+                        } else if let Some(operation) = OPERATION_KEYS.get(&c) {
+                            self.calculator.update_value();
+                            self.calculator.set_pending_operation(operation.clone());
+                            self.accumulator.clear();
+                        } else if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
+                            self.calculator.set_numeric_base(*base);
+                        } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
+                            self.calculator.set_numeric_mode(*mode);
+                        }
+                        self.parse_and_update_accumulator();
+                    }
+                    _ => {},
                 }
-                self.parse_and_update_accumulator();
             }
-            KeyCode::Esc => self.calculator.clear(),
-            KeyCode::Enter | KeyCode::Char('=') => {
-                self.calculator.update_value();
-                self.accumulator.clear();
-                self.parse_and_update_accumulator();
+            Mode::SignificantDigits => {
+                match key_event.code {
+                    KeyCode::Esc => self.mode = Mode::Calculating,
+                    KeyCode::Char('S') => self.mode = Mode::Calculating,
+                    KeyCode::Char('q') => self.request_exit(),
+                    _ => {}
+                }
             },
-            KeyCode::Char('.') => {
-                if self.calculator.get_numeric_mode() != NumericMode::Integer
-                        && self.accumulator.find('.').is_none() {
-                    self.accumulator.push('.');
-                    self.parse_and_update_accumulator();
-                }
-            }
-            KeyCode::Char('E') => {
-                // TODO: add support for capital 'E' if in caps mode
-                if self.calculator.get_numeric_mode() == NumericMode::Scientific
-                        && self.accumulator.find('e').is_none() {
-                    self.accumulator.push_str("e+");
-                    self.parse_and_update_accumulator();
-                }
-            }
-            KeyCode::Char('q') => self.request_exit(),
-            KeyCode::Char('r') => {
-            }
-            KeyCode::Char('s') => {
-            }
-            KeyCode::Char(c) => {
-                if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
-                    self.accumulator.push(c);
-                } else if let Some(operation) = OPERATION_KEYS.get(&c) {
-                    self.calculator.update_value();
-                    self.calculator.set_pending_operation(operation.clone());
-                    self.accumulator.clear();
-                } else if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
-                    self.calculator.set_numeric_base(*base);
-                } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
-                    self.calculator.set_numeric_mode(*mode);
-                }
-                self.parse_and_update_accumulator();
-            }
-            _ => {
-            }
+            _ => {},
         }
     }
 
@@ -363,26 +376,22 @@ impl Widget for &App {
         }
 
         // numeric base
-/* kda_COMMENTED_OUT
         location = Rect{
             x: 1,
             y: DISPLAY_HEIGHT - 2,
             width: 8,
             height: 1,
         };
-  kda_COMMENTED_OUT */
         Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.get_numeric_base()]))
             .render(location, buf);
 
         // numeric mode
-/* kda_COMMENTED_OUT
         location = Rect{
             x: DISPLAY_WIDTH - 4,
             y: DISPLAY_HEIGHT - 2,
             width: 3,
             height: 1,
         };
-  kda_COMMENTED_OUT */
         Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.get_numeric_mode()]))
             .right_aligned()
             .render(location, buf);
@@ -469,7 +478,7 @@ impl Widget for &App {
         text.push_line(line.centered());
 
         location.height = text.height() as u16;
-        location.y = KEYPAD_HEIGHT - location.height - 1;
+        location.y = DISPLAY_HEIGHT + KEYPAD_HEIGHT - location.height - 1;
         text.render(location, buf);
 
     }
