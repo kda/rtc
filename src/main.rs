@@ -205,7 +205,11 @@ impl App {
                     }
                     KeyCode::Char('s') => {
                     }
-                    KeyCode::Char('S') => self.mode = Mode::SignificantDigits,
+                    KeyCode::Char('F') => {
+                        if self.calculator.get_numeric_mode() != NumericMode::Integer {
+                            self.mode = Mode::SignificantDigits;
+                        }
+                    }
                     KeyCode::Char(c) => {
                         if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
                             self.accumulator.push(c);
@@ -225,11 +229,17 @@ impl App {
             }
             Mode::SignificantDigits => {
                 match key_event.code {
-                    KeyCode::Esc => self.mode = Mode::Calculating,
-                    KeyCode::Char('S') => self.mode = Mode::Calculating,
+                    KeyCode::Esc => {},
+                    KeyCode::Char('S') => {},
                     KeyCode::Char('q') => self.request_exit(),
+                    KeyCode::Char('0') => self.significant_digits = 0,
+                    KeyCode::Char('1') => self.significant_digits = 1,
+                    KeyCode::Char('2') => self.significant_digits = 2,
+                    KeyCode::Char('3') => self.significant_digits = 3,
+                    KeyCode::Char('4') => self.significant_digits = 4,
                     _ => {}
                 }
+                self.mode = Mode::Calculating;
             },
             _ => {},
         }
