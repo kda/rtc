@@ -29,6 +29,16 @@ enum Mode {
     Help,
 }
 
+// Pro: all keys top level, one place (resolve collisions)
+// key -> 
+//      AppMode ->
+//          NumericBase ->
+//              NumericMode ->
+//      Help -> (maybe modal)
+//          content
+//
+// AppMode
+
 pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
@@ -230,7 +240,6 @@ impl App {
             Mode::SignificantDigits => {
                 match key_event.code {
                     KeyCode::Esc => {},
-                    KeyCode::Char('S') => {},
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char('0') => self.significant_digits = 0,
                     KeyCode::Char('1') => self.significant_digits = 1,
@@ -246,7 +255,10 @@ impl App {
                 }
                 self.mode = Mode::Calculating;
             },
-            _ => {},
+            Mode::Memory => {
+            },
+            Mode::Help => {
+            },
         }
     }
 
@@ -488,14 +500,17 @@ impl Widget for &App {
                 line.push_span("number of significant digits");
                 text.push_line(line.centered());
                 line = Line::default();
-                let mut digits: String =
+                let digits: String =
                     NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]
                     .iter().map(|c| format!(" {c}")).collect();
                 line.push_span(digits);
                 text.push_line(line.centered());
                 text.render(location, buf);
             },
-            _ => {},
+            Mode::Memory => {
+            },
+            Mode::Help => {
+            },
         }
 
         // Always present

@@ -14,12 +14,11 @@ Text-based calculator written in Rust.
 - 	add color (if terminal capable and/or if flag)
 - 	check terminal size at startup for available space (exit gracefully if insufficient.)
 -   display commas (modal, also consider EURO style (.  <-> ,)) (possibly detect based on locale?)
--   number of significant digits
 -   build out help system
 -   develop tests to cover all features
--   add modal operation
 -   add 'V' to show version
 -   detect and enforce maximum length of entry of value
+-   implement memory registers
 ## command line
 -   add clap to support version and other command line flags
 -   support -V for version
@@ -33,6 +32,7 @@ Text-based calculator written in Rust.
 -   number of significant digits
 -   color mode
 -   display commas (modal, also consider EURO style (.  <-> ,))
+-   display memory registers
 
 ## discarded attempts
 -   BigText Result: cargo add ratatui tui-big-text
