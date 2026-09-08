@@ -4,6 +4,8 @@ Rust Text Calculator
 Text-based calculator written in Rust.
 
 [![Rust](https://github.com/kda/rtc/actions/workflows/rust.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust.yml)
+[![Windows](https://github.com/kda/rtc/actions/workflows/rust_on_windows.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust_on_windows.yml)
+[![MacOS](https://github.com/kda/rtc/actions/workflows/rust_on_macos.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust_on_macos.yml)
 
 # todo
 ## refactor
