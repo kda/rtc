@@ -1,0 +1,42 @@
+name: Daily Rust Run on Code Change (MacOS)
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Runs daily at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-commits:
+    runs-on: macos-15
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for commits in the last 24 hours
+        id: check
+        run: |
+          COMMITS=$(git log --since="24 hours ago" --oneline)
+          if [ -z "$COMMITS" ]; then
+            echo "No changes found."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected!"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  daily-rust-task:
+    needs: check-commits
+    if: needs.check-commits.outputs.has_changes == 'true'
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
