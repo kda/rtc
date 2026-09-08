@@ -1,0 +1,45 @@
+name: Daily Rust Run on Code Change (Windows)
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Runs daily at 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-commits:
+    runs-on: windows-2025 # Target Windows environment
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for commits in the last 24 hours
+        id: check
+        shell: pwsh # Explicitly use PowerShell Core
+        run: |
+          # Fetch commit count from the last 24 hours
+          $commits = git log --since="24 hours ago" --oneline
+
+          if ([string]::IsNullOrEmpty($commits)) {
+            Write-Host "No changes found."
+            echo "has_changes=false" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Changes detected!"
+            echo "has_changes=true" >> $env:GITHUB_OUTPUT
+          }
+
+  daily-rust-task:
+    needs: check-commits
+    if: needs.check-commits.outputs.has_changes == 'true'
+    runs-on: windows-2025 # Target Windows environment
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+
