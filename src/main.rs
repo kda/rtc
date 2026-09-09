@@ -28,6 +28,9 @@ enum Mode {
     MemoryRecall,
     SignificantDigits,
     Help,
+/* kda_COMMENTED_OUT
+    MODE_COUNT,
+  kda_COMMENTED_OUT */
 }
 
 // Pro: all keys top level, one place (resolve collisions)
@@ -39,6 +42,36 @@ enum Mode {
 //          content
 //
 // AppMode
+
+/* kda_COMMENTED_OUT
+type KeyOperation = fn();
+
+struct ModeOp {
+    mode: Mode,
+    operation: KeyOperation,
+}
+
+struct KeyEntry<'a> {
+    c: char,
+    mode_op: [ModeOp; Mode::MODE_COUNT as usize],
+    short_help_text: &'a str,
+    help_text: &'a str,
+}
+
+const KEYS = [
+    KeyEntry {
+        c: '?',
+        mode_op: [
+            ModeOp {
+                mode: Mode::Calculating,
+                operation: () {
+                },
+            },
+        ],
+        help_text: "Get Help",
+    },
+];
+  kda_COMMENTED_OUT */
 
 pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
@@ -198,6 +231,9 @@ impl App {
                         self.accumulator.clear();
                         self.parse_and_update_accumulator();
                     },
+                    KeyCode::Char('?') => {
+                        self.mode = Mode::Help;
+                    }
                     KeyCode::Char('.') => {
                         if self.calculator.get_numeric_mode() != NumericMode::Integer
                                 && self.accumulator.find('.').is_none() {
@@ -251,6 +287,7 @@ impl App {
             Mode::SignificantDigits => {
                 match key_event.code {
                     KeyCode::Esc => {},
+                    KeyCode::Char('?') => {},
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(number) = c.to_digit(10) {
@@ -266,6 +303,7 @@ impl App {
             Mode::MemoryStore => {
                 match key_event.code {
                     KeyCode::Esc => {},
+                    KeyCode::Char('?') => {},
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
@@ -281,6 +319,7 @@ impl App {
             Mode::MemoryRecall => {
                 match key_event.code {
                     KeyCode::Esc => {},
+                    KeyCode::Char('?') => {},
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
@@ -299,7 +338,18 @@ impl App {
                 self.mode = Mode::Calculating;
             },
             Mode::Help => {
+                match key_event.code {
+                    KeyCode::Esc => {},
+                    KeyCode::Char('?') => {},
+                    KeyCode::Char('q') => self.request_exit(),
+                    _ => {
+                    },
+                }
+                self.mode = Mode::Calculating;
             },
+/* kda_COMMENTED_OUT
+            Mode::MODE_COUNT => {},
+  kda_COMMENTED_OUT */
         }
     }
 
@@ -525,11 +575,12 @@ impl Widget for &App {
                 bases.sort_unstable();
                 for base in bases {
                     if *base != self.calculator.state.get_numeric_base() {
-                        let nbk_binding = NUMERIC_BASE_KEYS;
-                        let key = nbk_binding.iter()
+                        let Some(&key) = NUMERIC_BASE_KEYS.iter()
                             .find(|&(_, val_base)| val_base == base)
-                            .map(|(key, _)| key);
-                        line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_BASE_HELP[base]));
+                            .map(|(key, _)| key) else {
+                                panic!("unable to find numeric base");
+                            };
+                        line.push_span(format!(" {}:{}", key, NUMERIC_BASE_HELP[base]));
                     }
                 }
                 text.push_line(line.left_aligned());
@@ -542,11 +593,12 @@ impl Widget for &App {
                 modes.sort_unstable();
                 for mode in modes {
                     if *mode != self.calculator.get_numeric_mode() {
-                        let nmk_binding = NUMERIC_MODE_KEYS;
-                        let key = nmk_binding.iter()
-                            .find(|&(_, val_mode)| val_mode == mode)
-                            .map(|(key, _)| key);
-                        line.push_span(format!(" {}:{}", key.unwrap(), NUMERIC_MODE_NAMES[mode]));
+                        let Some(&key) = NUMERIC_MODE_KEYS.iter()
+                                .find(|&(_, val_mode)| val_mode == mode)
+                                .map(|(key, _)| key) else {
+                                    panic!("unable to find numeric mode");
+                                };
+                        line.push_span(format!(" {key}:{}", NUMERIC_MODE_NAMES[mode]));
                     }
                 }
                 if self.calculator.get_numeric_mode() != NumericMode::Integer {
@@ -566,6 +618,9 @@ impl Widget for &App {
             },
             Mode::Help => {
             },
+/* kda_COMMENTED_OUT
+            Mode::MODE_COUNT => {},
+  kda_COMMENTED_OUT */
         }
 
         // Always present
