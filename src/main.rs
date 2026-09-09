@@ -4,14 +4,12 @@ use ratatui::{
     prelude::{Line, Position, Size, Text},
 };
 use ratatui::layout::Rect;
-//use ratatui::symbols::merge::MergeStrategy;
 use ratatui::buffer::Buffer;
 use ratatui::widgets::Widget;
 use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
 use std::collections::HashMap;
 use std::sync::LazyLock;
-//use std::ops::Deref;
 
 mod calculator;
 
@@ -48,28 +46,41 @@ struct KeyEntry<'a> {
     help_text: &'a str,
 }
 
-fn junk(app: &mut App) {
-}
-
 pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
         (KeyCode::Esc,
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            app.calculator.clear();
-                        }) as KeyOperation),
+                        (Mode::Calculating, (|app| { app.calculator.clear(); }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                        (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                        (Mode::Help, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     ]),
-                hint_text: "",
-                help_text: "",
+                hint_text: "clear",
+                help_text: "Esc",
+            }
+        ),
+        (KeyCode::Char('?'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.mode = Mode::Help; }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| {app.mode = Mode::Help;}) as KeyOperation),
+                        (Mode::MemoryStore, (|app| {app.mode = Mode::Help;}) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| {app.mode = Mode::Help;}) as KeyOperation),
+                    ]),
+                hint_text: "help",
+                help_text: "?",
             }
         ),
         (KeyCode::Char('q'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            app.request_exit();
-                        }) as KeyOperation),
+                        (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::Help, (|app| { app.request_exit(); }) as KeyOperation),
                     ]),
                 hint_text: "quit",
                 help_text: "q",
