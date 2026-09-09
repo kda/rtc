@@ -21,10 +21,11 @@ use calculator::NumericMode;
 use calculator::Operation;
 use calculator::Error;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Mode {
     Calculating,
-    Memory,
+    MemoryStore,
+    MemoryRecall,
     SignificantDigits,
     Help,
 }
@@ -127,6 +128,7 @@ pub struct App {
     size: Size,
     calculator: Calculator,
     accumulator: String,
+    memory_registers_visible: bool,
     memory_registers: [calculator::ValuePair; NUMBER_OF_REGISTERS],
 
     // Display oriented values
@@ -141,6 +143,7 @@ impl App {
             size: Size::default(),
             calculator: Calculator::new(),
             accumulator: String::new(),
+            memory_registers_visible: false,
             memory_registers: [calculator::ValuePair::default(); NUMBER_OF_REGISTERS],
             significant_digits: 2,
         }
@@ -212,13 +215,18 @@ impl App {
                     }
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char('r') => {
+                        self.mode = Mode::MemoryRecall;
                     }
                     KeyCode::Char('s') => {
+                        self.mode = Mode::MemoryStore;
                     }
                     KeyCode::Char('F') => {
                         if self.calculator.get_numeric_mode() != NumericMode::Integer {
                             self.mode = Mode::SignificantDigits;
                         }
+                    }
+                    KeyCode::Char('M') => {
+                        self.memory_registers_visible = ! self.memory_registers_visible;
                     }
                     KeyCode::Char(c) => {
                         if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
@@ -231,6 +239,9 @@ impl App {
                             self.calculator.set_numeric_base(*base);
                         } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
                             self.calculator.set_numeric_mode(*mode);
+                            for mr in self.memory_registers.iter_mut() {
+                                mr.set_numeric_mode(*mode);
+                            }
                         }
                         self.parse_and_update_accumulator();
                     }
@@ -241,21 +252,59 @@ impl App {
                 match key_event.code {
                     KeyCode::Esc => {},
                     KeyCode::Char('q') => self.request_exit(),
-                    KeyCode::Char('0') => self.significant_digits = 0,
-                    KeyCode::Char('1') => self.significant_digits = 1,
-                    KeyCode::Char('2') => self.significant_digits = 2,
-                    KeyCode::Char('3') => self.significant_digits = 3,
-                    KeyCode::Char('4') => self.significant_digits = 4,
-                    KeyCode::Char('5') => self.significant_digits = 5,
-                    KeyCode::Char('6') => self.significant_digits = 6,
-                    KeyCode::Char('7') => self.significant_digits = 7,
-                    KeyCode::Char('8') => self.significant_digits = 8,
-                    KeyCode::Char('9') => self.significant_digits = 9,
+                    KeyCode::Char(c) => {
+                        if let Some(number) = c.to_digit(10) {
+                            if number >= 0 && number <= 9 {
+                                self.significant_digits = number as usize;
+                            }
+                        }
+                    },
                     _ => {}
                 }
                 self.mode = Mode::Calculating;
             },
-            Mode::Memory => {
+            Mode::MemoryStore => {
+                match key_event.code {
+                    KeyCode::Esc => {},
+                    KeyCode::Char('q') => self.request_exit(),
+                    KeyCode::Char(c) => {
+                        if let Some(index) = c.to_digit(10) {
+                            if index >= 0 && index <= 9 {
+                                self.memory_registers[index as usize] = self.calculator.state.get_value();
+                            }
+                        }
+                    },
+                    _ => {}
+                }
+                self.mode = Mode::Calculating;
+            },
+            Mode::MemoryRecall => {
+                match key_event.code {
+                    KeyCode::Esc => {},
+                    KeyCode::Char('q') => self.request_exit(),
+                    KeyCode::Char(c) => {
+                        if let Some(index) = c.to_digit(10) {
+                            if index >= 0 && index <= 9 {
+                                //self.calculator.set_value(self.memory_registers[index as usize]);
+/* kda_COMMENTED_OUT
+                                if self.calculator.get_numeric_mode() == NumericMode::Integer {
+                                    self.calculator.set_integer_accumulator(self.memory_registers[index as usize].get_integer());
+                                } else {
+                                    self.calculator.set_decimal_accumulator(self.memory_registers[index as usize].get_decimal());
+                                }
+  kda_COMMENTED_OUT */
+                                if self.calculator.get_numeric_mode() == NumericMode::Integer {
+                                    self.accumulator = self.memory_registers[index as usize].get_integer().to_string();
+                                } else {
+                                    self.accumulator = self.memory_registers[index as usize].get_decimal().to_string();
+                                }
+                                self.parse_and_update_accumulator();
+                            }
+                        }
+                    },
+                    _ => {}
+                }
+                self.mode = Mode::Calculating;
             },
             Mode::Help => {
             },
@@ -348,6 +397,28 @@ impl App {
             }
         }
     }
+
+    fn render_digits_keypad(&self, area: Rect, buf: &mut Buffer, name: &str) {
+        let location = Rect {
+            x:  1,
+            y: DISPLAY_HEIGHT + 1,
+            width: DISPLAY_WIDTH - 2,
+            height: area.height - 1,
+        };
+        let mut text = Text::default();
+        let mut line = Line::default();
+        line.push_span(name);
+        text.push_line(line.centered());
+        line = Line::default();
+        text.push_line(line);
+        line = Line::default();
+        let digits: String =
+            NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]
+            .iter().map(|c| format!(" {c}")).collect();
+        line.push_span(digits);
+        text.push_line(line.centered());
+        text.render(location, buf);
+    }
 }
 
 const DISPLAY_X: u16 = 0;
@@ -355,6 +426,8 @@ const DISPLAY_Y: u16 = 0;
 const DISPLAY_WIDTH: u16 = 35;
 const DISPLAY_HEIGHT: u16 = 5;
 const KEYPAD_HEIGHT: u16 = 20;
+const MEMORY_WIDTH: u16 = 20;
+const MEMORY_HEIGHT: u16 = DISPLAY_HEIGHT + KEYPAD_HEIGHT;
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
@@ -491,23 +564,13 @@ impl Widget for &App {
                 text.render(location, buf);
             },
             Mode::SignificantDigits => {
-                location.x = 1;
-                location.y = DISPLAY_HEIGHT + 1;
-                location.width = DISPLAY_WIDTH - 2;
-                location.height = area.height - 1;
-                let mut text = Text::default();
-                let mut line = Line::default();
-                line.push_span("number of significant digits");
-                text.push_line(line.centered());
-                line = Line::default();
-                let digits: String =
-                    NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]
-                    .iter().map(|c| format!(" {c}")).collect();
-                line.push_span(digits);
-                text.push_line(line.centered());
-                text.render(location, buf);
+                self.render_digits_keypad(area, buf, "number of significant digits");
             },
-            Mode::Memory => {
+            Mode::MemoryStore => {
+                self.render_digits_keypad(area, buf, "location to store value");
+            },
+            Mode::MemoryRecall => {
+                self.render_digits_keypad(area, buf, "location to recall from");
             },
             Mode::Help => {
             },
@@ -526,6 +589,35 @@ impl Widget for &App {
         location.y = DISPLAY_HEIGHT + KEYPAD_HEIGHT - location.height - 1;
         text.render(location, buf);
 
+        if self.memory_registers_visible || self.mode == Mode::MemoryStore || self.mode == Mode::MemoryRecall {
+            location = Rect{
+                x: DISPLAY_WIDTH,
+                y: DISPLAY_Y,
+                width: MEMORY_WIDTH,
+                height: MEMORY_HEIGHT,
+            };
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .render(location, buf);
+
+            location.x += 1;
+            location.y += 1;
+            location.width -= 2;
+            text = Text::default();
+            line = Line::default();
+            line.push_span("memory registers");
+            text.push_line(line.centered());
+
+            for (index, mr) in self.memory_registers.iter().enumerate() {
+                line = Line::default();
+                text.push_line(line);
+                line = Line::default();
+                line.push_span(format!("{index}: {:>}", self.format_value_pair(*mr)));
+                text.push_line(line);
+            }
+
+            text.render(location, buf);
+        }
     }
 }
 

@@ -227,15 +227,11 @@ impl RemAssign<ValuePair> for ValuePair {
 
 #[derive(Debug, Default)]
 pub struct State {
-    //value: i128,
     value: ValuePair,
     numeric_base: NumericBase,
-    // TODO: Deprecate: maybe
-    //accumulator: Option<i128>,
     accumulator: Option<ValuePair>,
     pending_operation: Option<Operation>,
     error: Option<Error>,
-    //numeric_mode: NumericMode,
 }
 
 impl State {
