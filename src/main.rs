@@ -254,7 +254,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(number) = c.to_digit(10) {
-                            if number >= 0 && number <= 9 {
+                            if number <= 9 {
                                 self.significant_digits = number as usize;
                             }
                         }
@@ -269,7 +269,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
-                            if index >= 0 && index <= 9 {
+                            if index <= 9 {
                                 self.memory_registers[index as usize] = self.calculator.state.get_value();
                             }
                         }
@@ -284,15 +284,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
-                            if index >= 0 && index <= 9 {
-                                //self.calculator.set_value(self.memory_registers[index as usize]);
-/* kda_COMMENTED_OUT
-                                if self.calculator.get_numeric_mode() == NumericMode::Integer {
-                                    self.calculator.set_integer_accumulator(self.memory_registers[index as usize].get_integer());
-                                } else {
-                                    self.calculator.set_decimal_accumulator(self.memory_registers[index as usize].get_decimal());
-                                }
-  kda_COMMENTED_OUT */
+                            if index <= 9 {
                                 if self.calculator.get_numeric_mode() == NumericMode::Integer {
                                     self.accumulator = self.memory_registers[index as usize].get_integer().to_string();
                                 } else {
