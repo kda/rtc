@@ -21,6 +21,8 @@ Text-based calculator written in Rust.
 -   add 'V' to show version
 -   detect and enforce maximum length of entry of value
 -   implement memory registers
+## bug
+-   Esc clears accumulator, but it still shows a value
 ## command line
 -   add clap to support version and other command line flags
 -   support -V for version

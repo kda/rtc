@@ -21,16 +21,13 @@ use calculator::NumericMode;
 use calculator::Operation;
 use calculator::Error;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 enum Mode {
     Calculating,
     MemoryStore,
     MemoryRecall,
     SignificantDigits,
     Help,
-/* kda_COMMENTED_OUT
-    MODE_COUNT,
-  kda_COMMENTED_OUT */
 }
 
 // Pro: all keys top level, one place (resolve collisions)
@@ -43,35 +40,44 @@ enum Mode {
 //
 // AppMode
 
-/* kda_COMMENTED_OUT
-type KeyOperation = fn();
-
-struct ModeOp {
-    mode: Mode,
-    operation: KeyOperation,
-}
+type KeyOperation = fn(app: &mut App);
 
 struct KeyEntry<'a> {
-    c: char,
-    mode_op: [ModeOp; Mode::MODE_COUNT as usize],
-    short_help_text: &'a str,
+    mode_op: HashMap<Mode, KeyOperation>,
+    hint_text: &'a str,
     help_text: &'a str,
 }
 
-const KEYS = [
-    KeyEntry {
-        c: '?',
-        mode_op: [
-            ModeOp {
-                mode: Mode::Calculating,
-                operation: () {
-                },
-            },
-        ],
-        help_text: "Get Help",
-    },
-];
-  kda_COMMENTED_OUT */
+fn junk(app: &mut App) {
+}
+
+pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
+    HashMap::from([
+        (KeyCode::Esc,
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            app.calculator.clear();
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "",
+                help_text: "",
+            }
+        ),
+        (KeyCode::Char('q'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            app.request_exit();
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "quit",
+                help_text: "q",
+            }
+        ),
+    ])
+});
+
 
 pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
@@ -211,6 +217,12 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
+        if let Some(ke) = KEYS_MAPPING.get(&key_event.code) {
+            if let Some(ko) = ke.mode_op.get(&self.mode) {
+                ko(self);
+            }
+            return;
+        }
         match self.mode {
             Mode::Calculating => {
                 match key_event.code {
@@ -225,7 +237,6 @@ impl App {
                         }
                         self.parse_and_update_accumulator();
                     }
-                    KeyCode::Esc => self.calculator.clear(),
                     KeyCode::Enter | KeyCode::Char('=') => {
                         self.calculator.update_value();
                         self.accumulator.clear();
@@ -249,7 +260,6 @@ impl App {
                             self.parse_and_update_accumulator();
                         }
                     }
-                    KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char('r') => {
                         self.mode = Mode::MemoryRecall;
                     }
@@ -347,9 +357,6 @@ impl App {
                 }
                 self.mode = Mode::Calculating;
             },
-/* kda_COMMENTED_OUT
-            Mode::MODE_COUNT => {},
-  kda_COMMENTED_OUT */
         }
     }
 
@@ -618,9 +625,6 @@ impl Widget for &App {
             },
             Mode::Help => {
             },
-/* kda_COMMENTED_OUT
-            Mode::MODE_COUNT => {},
-  kda_COMMENTED_OUT */
         }
 
         // Always present
