@@ -86,6 +86,19 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                 help_text: "q",
             }
         ),
+        (KeyCode::Char('0'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.accumulate("0"); }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(0); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
+                        (Mode::Help, (|app| { ; }) as KeyOperation),
+                    ]),
+                hint_text: "quit",
+                help_text: "q",
+            }
+        ),
     ])
 });
 
@@ -312,7 +325,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(number) = c.to_digit(10) {
-                            if number <= 9 {
+                            if number > 0 && number <= 9 {
                                 self.significant_digits = number as usize;
                             }
                         }
@@ -328,7 +341,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
-                            if index <= 9 {
+                            if index > 0 && index <= 9 {
                                 self.memory_registers[index as usize] = self.calculator.state.get_value();
                             }
                         }
@@ -344,7 +357,7 @@ impl App {
                     KeyCode::Char('q') => self.request_exit(),
                     KeyCode::Char(c) => {
                         if let Some(index) = c.to_digit(10) {
-                            if index <= 9 {
+                            if index > 0 && index <= 9 {
                                 if self.calculator.get_numeric_mode() == NumericMode::Integer {
                                     self.accumulator = self.memory_registers[index as usize].get_integer().to_string();
                                 } else {
@@ -419,6 +432,11 @@ impl App {
         }
     }
 
+    fn accumulate(&mut self, s: &str) {
+        self.accumulator.push_str(s);
+        self.parse_and_update_accumulator();
+    }
+
     fn parse_and_update_accumulator(&mut self) {
         if self.accumulator.len() == 0 {
             self.calculator.clear_accumulator();
@@ -456,6 +474,29 @@ impl App {
                 }
             }
         }
+    }
+
+    fn set_significant_digits(&mut self, count: usize) {
+        self.significant_digits = count;
+        self.mode = Mode::Calculating;
+    }
+
+    fn memory_registers_store(&mut self, index: usize) {
+        self.memory_registers[index] = self.calculator.state.get_value();
+        self.mode = Mode::Calculating;
+    }
+
+    fn memory_registers_recall(&mut self, index: usize) {
+        if index > 9 {
+            return;
+        }
+        if self.calculator.get_numeric_mode() == NumericMode::Integer {
+            self.accumulator = self.memory_registers[index as usize].get_integer().to_string();
+        } else {
+            self.accumulator = self.memory_registers[index as usize].get_decimal().to_string();
+        }
+        self.parse_and_update_accumulator();
+        self.mode = Mode::Calculating;
     }
 
     fn render_digits_keypad(&self, area: Rect, buf: &mut Buffer, name: &str) {
