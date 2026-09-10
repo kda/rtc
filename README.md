@@ -26,6 +26,7 @@ Text-based calculator written in Rust.
 ## command line
 -   add clap to support version and other command line flags
 -   support -V for version
+-   confirm quit request
 ## preferences (also, all available via command line)
 -   start in decimal or scientific mode (or integer (default))
 -   start in hex, oct, or bin base (or decimal (default))
@@ -37,6 +38,7 @@ Text-based calculator written in Rust.
 -   color mode
 -   display commas (modal, also consider EURO style (.  <-> ,))
 -   display memory registers
+-   confirm quit request
 
 ## discarded attempts
 -   BigText Result: cargo add ratatui tui-big-text

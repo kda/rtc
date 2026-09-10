@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 mod calculator;
+mod help_content;
 
 use calculator::Calculator;
 use calculator::NumericBase;
@@ -25,18 +26,9 @@ enum Mode {
     MemoryStore,
     MemoryRecall,
     SignificantDigits,
-    Help,
+    AskingHelp,
+    ShowingHelp,
 }
-
-// Pro: all keys top level, one place (resolve collisions)
-// key -> 
-//      AppMode ->
-//          NumericBase ->
-//              NumericMode ->
-//      Help -> (maybe modal)
-//          content
-//
-// AppMode
 
 type KeyOperation = fn(app: &mut App);
 
@@ -55,22 +47,22 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                         (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                         (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                         (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                        (Mode::Help, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                        (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     ]),
                 hint_text: "clear",
-                help_text: "Esc",
+                help_text: "&#27;",
             }
         ),
         (KeyCode::Char('?'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.mode = Mode::Help; }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| {app.mode = Mode::Help;}) as KeyOperation),
-                        (Mode::MemoryStore, (|app| {app.mode = Mode::Help;}) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| {app.mode = Mode::Help;}) as KeyOperation),
+                        (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
                 hint_text: "help",
-                help_text: "?",
+                help_text: "&quest;",
             }
         ),
         (KeyCode::Char('q'),
@@ -80,7 +72,7 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                         (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
                         (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::Help, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                     ]),
                 hint_text: "quit",
                 help_text: "q",
@@ -93,10 +85,9 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                         (Mode::SignificantDigits, (|app| { app.set_significant_digits(0); }) as KeyOperation),
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
-                        (Mode::Help, (|app| { ; }) as KeyOperation),
                     ]),
-                hint_text: "quit",
-                help_text: "q",
+                hint_text: "zero",
+                help_text: "0",
             }
         ),
     ])
@@ -196,6 +187,8 @@ pub struct App {
 
     // Display oriented values
     significant_digits: usize,
+
+    help_content: String,
 }
 
 impl App {
@@ -209,10 +202,12 @@ impl App {
             memory_registers_visible: false,
             memory_registers: [calculator::ValuePair::default(); NUMBER_OF_REGISTERS],
             significant_digits: 2,
+            help_content: String::new(),
         }
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+        terminal.clear()?;
         self.size = terminal.size()?;
 
         while !self.exit_requested {
@@ -244,6 +239,13 @@ impl App {
         if let Some(ke) = KEYS_MAPPING.get(&key_event.code) {
             if let Some(ko) = ke.mode_op.get(&self.mode) {
                 ko(self);
+            } else if self.mode == Mode::AskingHelp {
+                if let Some(help_content) = help_content::extract_key_help_content(ke.help_text) {
+                    self.help_content = help_content;
+                    self.mode = Mode::ShowingHelp;
+                } else {
+                    panic!("no help for ==>{}<==", ke.help_text);
+                }
             }
             return;
         }
@@ -266,9 +268,11 @@ impl App {
                         self.accumulator.clear();
                         self.parse_and_update_accumulator();
                     },
+/* kda_COMMENTED_OUT
                     KeyCode::Char('?') => {
                         self.mode = Mode::Help;
                     }
+  kda_COMMENTED_OUT */
                     KeyCode::Char('.') => {
                         if self.calculator.get_numeric_mode() != NumericMode::Integer
                                 && self.accumulator.find('.').is_none() {
@@ -371,6 +375,7 @@ impl App {
                 }
                 self.mode = Mode::Calculating;
             },
+/* kda_COMMENTED_OUT
             Mode::Help => {
                 match key_event.code {
                     KeyCode::Esc => {},
@@ -381,6 +386,8 @@ impl App {
                 }
                 self.mode = Mode::Calculating;
             },
+  kda_COMMENTED_OUT */
+            _ => {},
         }
     }
 
@@ -675,7 +682,10 @@ impl Widget for &App {
             Mode::MemoryRecall => {
                 self.render_digits_keypad(area, buf, "location to recall from");
             },
-            Mode::Help => {
+            Mode::AskingHelp => {
+                // TODO: show all keys
+            },
+            Mode::ShowingHelp => {
             },
         }
 
@@ -731,9 +741,11 @@ fn main() -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::App;
+    use super::KEYS_MAPPING;
     use insta::assert_snapshot;
     use ratatui::{backend::TestBackend, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use crate::help_content;
 
     struct TestApp {
         app: App,
@@ -767,31 +779,41 @@ mod tests {
     }
 
     #[test]
-    fn test_initial_render_app() {
+    fn initial_render_app() {
         let mut ta = TestApp::new();
         ta.render();
         assert_snapshot!(ta.backend());
     }
 
     #[test]
-    fn test_quit() {
+    fn quit() {
         let mut ta = TestApp::new();
         ta.handle_key('q');
         assert!(ta.app.exit_requested);
     }
 
     #[test]
-    fn test_hex_base_int_mode_render() {
+    fn hex_base_int_mode_render() {
         let mut ta = TestApp::new();
         ta.handle_string("123=H");
         ta.render();
         assert_snapshot!(ta.backend());
     }
+
     #[test]
-    fn test_dec_base_dec_mode_render() {
+    fn dec_base_dec_mode_render() {
         let mut ta = TestApp::new();
         ta.handle_string("A123.45=+4.9F5");
         ta.render();
         assert_snapshot!(ta.backend());
     }
+
+/* kda_COMMENTED_OUT
+    #[test]
+    fn help_text_for_every_key() {
+        for (_, ke) in KEYS_MAPPING.iter() {
+            assert!(help_content::extract_key_help_content(ke.help_text).is_some());
+        }
+    }
+  kda_COMMENTED_OUT */
 }
