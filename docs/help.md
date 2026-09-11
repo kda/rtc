@@ -16,10 +16,10 @@ Clear the current context.
 Clears the current value (sets to zero).
 
 It can also be used to stop:
-    * picking a number of significant digits
-    * picking the register to store to 
-    * picking the register to recall from
-    * viewing the current help text
+-   picking a number of significant digits
+-   picking the register to store to 
+-   picking the register to recall from
+-   viewing the current help text
 
 ## quest
 key: ?
