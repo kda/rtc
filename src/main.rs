@@ -8,8 +8,6 @@ use ratatui::buffer::Buffer;
 use ratatui::widgets::Widget;
 use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
-use ratatui::widgets::Paragraph;
-use ratatui::widgets::Wrap;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -92,7 +90,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 help_text: "0",
             }
         ),
-/* kda_COMMENTED_OUT
         (KeyCode::Char('1'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -105,7 +102,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 help_text: "1",
             }
         ),
-  kda_COMMENTED_OUT */
     ])
 });
 
@@ -284,11 +280,6 @@ impl App {
                         self.accumulator.clear();
                         self.parse_and_update_accumulator();
                     },
-/* kda_COMMENTED_OUT
-                    KeyCode::Char('?') => {
-                        self.mode = Mode::Help;
-                    }
-  kda_COMMENTED_OUT */
                     KeyCode::Char('.') => {
                         if self.calculator.get_numeric_mode() != NumericMode::Integer
                                 && self.accumulator.find('.').is_none() {
@@ -391,18 +382,6 @@ impl App {
                 }
                 self.mode = Mode::Calculating;
             },
-/* kda_COMMENTED_OUT
-            Mode::Help => {
-                match key_event.code {
-                    KeyCode::Esc => {},
-                    KeyCode::Char('?') => {},
-                    KeyCode::Char('q') => self.request_exit(),
-                    _ => {
-                    },
-                }
-                self.mode = Mode::Calculating;
-            },
-  kda_COMMENTED_OUT */
             _ => {},
         }
     }
@@ -712,37 +691,32 @@ impl Widget for &App {
                     width: KEYPAD_WIDTH - 2,
                     height: KEYPAD_HEIGHT - 4,
                 };
-/* kda_COMMENTED_OUT
-                let normal_options = textwrap::Options::new(location.width as usize)
-                    .initial_indent("")
-                    .subsequent_indent("");
-                let bullet_options = textwrap::Options::new(location.width as usize)
-                    .initial_indent("")
-                    .subsequent_indent("  ");
                 let mut text = Text::default();
-                for line in self.help_content.split('\n') {
-/* kda_COMMENTED_OUT
-                    if text.lines.len() > 0 {
-                        text.push_line("\n");
-                    }
-  kda_COMMENTED_OUT */
-                    if line.starts_with('-') {
-                        text.push_line(textwrap::wrap(line, &bullet_options).join("\n"));
+                for help_line in self.help_content.split('\n') {
+                    if help_line.len() > location.width as usize {
+                        let indent = help_line.starts_with('-');
+                        //let mut second_line = false;
+                        let mut line = Line::default();
+                        for word in help_line.split(' ') {
+                            if line.width() + 1 + word.len() > location.width as usize {
+                                text.push_line(line);
+                                //second_line = true;
+                                line = Line::raw("");
+                                if indent {
+                                    line.push_span(" ");
+                                }
+                            }
+                            if line.width() > 0 {
+                                line.push_span(" ");
+                            }
+                            line.push_span(word)
+                        }
+                        text.push_line(line);
                     } else {
-                        text.push_line(textwrap::wrap(line, &normal_options).join("\n"));
+                        text.push_line(help_line);
                     }
                 }
-                Paragraph::new(text).render(location, buf);
-  kda_COMMENTED_OUT */
-/* kda_COMMENTED_OUT
-                let wrapped_lines = textwrap::wrap(&self.help_content, &options);
-                Paragraph::new(Line::from(wrapped_lines))
-  kda_COMMENTED_OUT */
-                Paragraph::new(self.help_content.clone())
-/* kda_COMMENTED_OUT
-                    .wrap(Wrap{ trim: false })
-  kda_COMMENTED_OUT */
-                    .render(location, buf);
+                text.render(location, buf);
             },
         }
 
