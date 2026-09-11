@@ -21,15 +21,45 @@ It can also be used to stop:
 -   picking the register to recall from
 -   viewing the current help text
 
-## +
-Addition    (+)
+## percnt
+Modulo      (%)
+
+Determine remainder in division, sometimes called modulo.
+
+## ast
+Multiply    (*)
+
+Perform multiplication.
+
+## plus
+Add         (+)
 
 Perform addition.
+
+## minus
+Subtract    (-)
+
+Perform subtraction.
+
+## sol
+Divide      (/)
+
+Perform division.
 
 ## quest
 Help    (?)
 
 Follow this key by any other key to learn how that key functions.
+
+## F
+Significant Digits  (F)
+
+Set the number of significant digits (0-9).
+
+## M
+Memory  (M)
+
+Show (or hide) memory registers.
 
 ## a
 a (base-16) (a)
@@ -65,6 +95,16 @@ Enter the hexadecimal number f.
 Quit    (q)
 
 Quit.  Exit the calculator.
+
+## r
+Recall  (r)
+
+Retrieve a memory register into the accumulator.
+
+## s
+Store   (s)
+
+Store the current value in a memory register.
 
 ## 0
 Zero    (0)

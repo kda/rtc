@@ -53,18 +53,49 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 help_text: "#27",
             }
         ),
+        (KeyCode::Char('%'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Modulo); }) as KeyOperation),
+                    ]),
+                hint_text: "percnt",
+                help_text: "percnt",
+            }
+        ),
+        (KeyCode::Char('*'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Multiply); }) as KeyOperation),
+                    ]),
+                hint_text: "ast",
+                help_text: "ast",
+            }
+        ),
         (KeyCode::Char('+'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            // TODO: convert to method, because called elsewhere
-                            app.calculator.update_value();
-                            app.calculator.set_pending_operation(Operation::Add);
-                            app.accumulator.clear();
-                        }) as KeyOperation),
+                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Add); }) as KeyOperation),
                     ]),
                 hint_text: "plus",
-                help_text: "+",
+                help_text: "plus",
+            }
+        ),
+        (KeyCode::Char('-'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Subtract); }) as KeyOperation),
+                    ]),
+                hint_text: "minus",
+                help_text: "minus",
+            }
+        ),
+        (KeyCode::Char('/'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Divide); }) as KeyOperation),
+                    ]),
+                hint_text: "sol",
+                help_text: "sol",
             }
         ),
         (KeyCode::Char('?'),
@@ -77,6 +108,30 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     ]),
                 hint_text: "help",
                 help_text: "quest",
+            }
+        ),
+        (KeyCode::Char('F'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| {
+                            if app.calculator.get_numeric_mode() != NumericMode::Integer {
+                                app.mode = Mode::SignificantDigits;
+                            }
+                        }) as KeyOperation),
+                ]),
+                hint_text: "F",
+                help_text: "F",
+            }
+        ),
+        (KeyCode::Char('M'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            app.memory_registers_visible = ! app.memory_registers_visible;
+                        }) as KeyOperation),
+                ]),
+                hint_text: "M",
+                help_text: "M",
             }
         ),
         (KeyCode::Char('a'),
@@ -155,6 +210,24 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     ]),
                 hint_text: "f",
                 help_text: "f",
+            }
+        ),
+        (KeyCode::Char('r'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
+                ]),
+                hint_text: "r",
+                help_text: "r",
+            }
+        ),
+        (KeyCode::Char('s'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
+                ]),
+                hint_text: "s",
+                help_text: "s",
             }
         ),
         (KeyCode::Char('q'),
@@ -381,16 +454,6 @@ pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::n
     ])
 });
 
-pub const OPERATION_KEYS: LazyLock<HashMap<char, Operation>> = LazyLock::new(|| {
-    HashMap::from([
-        ('+', Operation::Add),
-        ('-', Operation::Subtract),
-        ('*', Operation::Multiply),
-        ('/', Operation::Divide),
-        ('%', Operation::Modulo),
-    ])
-});
-
 pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
     HashMap::from([
         (Operation::Add, "+"),
@@ -518,26 +581,8 @@ impl App {
                             self.parse_and_update_accumulator();
                         }
                     }
-                    KeyCode::Char('r') => {
-                        self.mode = Mode::MemoryRecall;
-                    }
-                    KeyCode::Char('s') => {
-                        self.mode = Mode::MemoryStore;
-                    }
-                    KeyCode::Char('F') => {
-                        if self.calculator.get_numeric_mode() != NumericMode::Integer {
-                            self.mode = Mode::SignificantDigits;
-                        }
-                    }
-                    KeyCode::Char('M') => {
-                        self.memory_registers_visible = ! self.memory_registers_visible;
-                    }
                     KeyCode::Char(c) => {
-                        if let Some(operation) = OPERATION_KEYS.get(&c) {
-                            self.calculator.update_value();
-                            self.calculator.set_pending_operation(operation.clone());
-                            self.accumulator.clear();
-                        } else if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
+                        if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
                             self.calculator.set_numeric_base(*base);
                         } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
                             self.calculator.set_numeric_mode(*mode);
@@ -658,6 +703,14 @@ impl App {
     fn accumulate(&mut self, s: &str) {
         self.accumulator.push_str(s);
         self.parse_and_update_accumulator();
+    }
+
+    fn apply_operation(&mut self, op: Operation) {
+        self.calculator.update_value();
+        self.calculator.set_pending_operation(op);
+        self.accumulator.clear();
+        // TODO: Is this required?
+        //self.parse_and_update_accumulator();
     }
 
     fn parse_and_update_accumulator(&mut self) {
