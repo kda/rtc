@@ -8,6 +8,8 @@ use ratatui::buffer::Buffer;
 use ratatui::widgets::Widget;
 use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
+use ratatui::widgets::Paragraph;
+use ratatui::widgets::Wrap;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -38,7 +40,7 @@ struct KeyEntry<'a> {
     help_text: &'a str,
 }
 
-pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
+const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
         (KeyCode::Esc,
             KeyEntry {
@@ -50,7 +52,7 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                         (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     ]),
                 hint_text: "clear",
-                help_text: "&#27;",
+                help_text: "#27",
             }
         ),
         (KeyCode::Char('?'),
@@ -62,7 +64,7 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                         (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
                 hint_text: "help",
-                help_text: "&quest;",
+                help_text: "quest",
             }
         ),
         (KeyCode::Char('q'),
@@ -90,6 +92,20 @@ pub const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| 
                 help_text: "0",
             }
         ),
+/* kda_COMMENTED_OUT
+        (KeyCode::Char('1'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.accumulate("1"); }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(1); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(1); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(1); }) as KeyOperation),
+                    ]),
+                hint_text: "one",
+                help_text: "1",
+            }
+        ),
+  kda_COMMENTED_OUT */
     ])
 });
 
@@ -533,6 +549,9 @@ const DISPLAY_X: u16 = 0;
 const DISPLAY_Y: u16 = 0;
 const DISPLAY_WIDTH: u16 = 35;
 const DISPLAY_HEIGHT: u16 = 5;
+const KEYPAD_X: u16 = 0;
+const KEYPAD_Y: u16 = DISPLAY_HEIGHT;
+const KEYPAD_WIDTH: u16 = DISPLAY_WIDTH;
 const KEYPAD_HEIGHT: u16 = 20;
 const MEMORY_WIDTH: u16 = 20;
 const MEMORY_HEIGHT: u16 = DISPLAY_HEIGHT + KEYPAD_HEIGHT;
@@ -599,15 +618,16 @@ impl Widget for &App {
             .right_aligned()
             .render(location, buf);
 
-        // Valid keys (quick reference)
-        location.x = 0;
-        location.y = DISPLAY_HEIGHT;
-        location.width = DISPLAY_WIDTH;
+        // A nice box for Keypad
+        location.x = KEYPAD_X;
+        location.y = KEYPAD_Y;
+        location.width = KEYPAD_WIDTH;
         location.height = KEYPAD_HEIGHT;
         Block::bordered()
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
+        // Valid keys (quick reference)
         match self.mode {
             Mode::Calculating => {
                 // Digits
@@ -686,6 +706,18 @@ impl Widget for &App {
                 // TODO: show all keys
             },
             Mode::ShowingHelp => {
+                let location = Rect{
+                    x: KEYPAD_X + 1,
+                    y: KEYPAD_Y + 1,
+                    width: KEYPAD_WIDTH - 2,
+                    height: KEYPAD_HEIGHT - 4,
+                };
+                Paragraph::new(self.help_content.clone())
+/* kda_COMMENTED_OUT
+                    .wrap(Wrap::default())
+  kda_COMMENTED_OUT */
+                    .wrap(Wrap{ trim: true })
+                    .render(location, buf);
             },
         }
 
@@ -808,12 +840,22 @@ mod tests {
         assert_snapshot!(ta.backend());
     }
 
-/* kda_COMMENTED_OUT
     #[test]
     fn help_text_for_every_key() {
+        let mut help_missing = false;
         for (_, ke) in KEYS_MAPPING.iter() {
-            assert!(help_content::extract_key_help_content(ke.help_text).is_some());
+            if let Some(help) = help_content::extract_key_help_content(ke.help_text) {
+                if help.is_empty() {
+                    help_missing = true;
+                    println!("ERROR: empty help found for =>{}<=", ke.help_text);
+                } else {
+                    println!("INFO: help found for =>{}<= =>{}<=", ke.help_text, help);
+                }
+            } else {
+                help_missing = true;
+                println!("ERROR: no help found for =>{}<=", ke.help_text);
+            }
         }
+        assert!(!help_missing);
     }
-  kda_COMMENTED_OUT */
 }
