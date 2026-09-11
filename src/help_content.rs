@@ -36,6 +36,7 @@ pub fn extract_key_help_content(heading_name: &str) -> Option<String> {
                 } else if in_h2 {
                     h2_title.push_str(text);
                 } else if title_h2_found {
+                    //println!("INFO: text: {}", text);
                     h2_content.push_str(text);
                 }
             },
@@ -60,11 +61,33 @@ pub fn extract_key_help_content(heading_name: &str) -> Option<String> {
             },
             _ => {
                 if title_h2_found {
+                    // println!("INFO: anything: {:?}", event);
                     match &event {
                         Event::SoftBreak | Event::HardBreak => {
-                            h2_content.push('\n');
+                            // println!("INFO: found break");
+                            //h2_content.push('\n');
                         },
-                        _ => {},
+                        Event::Start(Tag::Paragraph) => {
+                            // println!("INFO: paragraph begin");
+                            if h2_content.len() > 0 {
+                                h2_content.push_str("\n\n");
+                            }
+                        },
+                        Event::Start(Tag::List(_ordered)) => {
+                            // println!("INFO: list begin {:?}", ordered);
+                            h2_content.push('\n');
+                        }
+                        Event::Start(Tag::Item) => {
+                            // println!("INFO: item begin");
+                            h2_content.push_str("- ");
+                        }
+                        Event::End(TagEnd::Item) => {
+                            // println!("INFO: item end");
+                            h2_content.push('\n');
+                        }
+                        _ => {
+                            // println!("INFO: default capture {:?}", event);
+                        },
                     }
                 }
             },

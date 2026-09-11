@@ -9,34 +9,36 @@ Of course, every section may be quickly referenced by typing `?` followed by the
 Everything below here is used to populate the interactive help system.
 
 ## #27
-key: Escape
+Clear    (Escape)
 
 Clear the current context.
 
-Clears the current value (sets to zero).
+Clears the current value (sets
+    to zero).
 
 It can also be used to stop:
--   picking a number of significant digits
+-   picking a number of significant
+    digits
 -   picking the register to store to 
 -   picking the register to recall from
 -   viewing the current help text
 
 ## quest
-key: ?
+Help    (?)
 
 Follow this key by any other key to learn how that key functions.
 
 ## q
-key: q
+Quit    (q)
 
 Quit.  Exit the calculator.
 
 ## 0
-key: 0
+Zero    (0)
 
 Enter the number 0.
 
 ## 1
-key: 1
+One     (1)
 
 Enter the number 1.

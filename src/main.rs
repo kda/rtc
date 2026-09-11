@@ -712,11 +712,36 @@ impl Widget for &App {
                     width: KEYPAD_WIDTH - 2,
                     height: KEYPAD_HEIGHT - 4,
                 };
+/* kda_COMMENTED_OUT
+                let normal_options = textwrap::Options::new(location.width as usize)
+                    .initial_indent("")
+                    .subsequent_indent("");
+                let bullet_options = textwrap::Options::new(location.width as usize)
+                    .initial_indent("")
+                    .subsequent_indent("  ");
+                let mut text = Text::default();
+                for line in self.help_content.split('\n') {
+/* kda_COMMENTED_OUT
+                    if text.lines.len() > 0 {
+                        text.push_line("\n");
+                    }
+  kda_COMMENTED_OUT */
+                    if line.starts_with('-') {
+                        text.push_line(textwrap::wrap(line, &bullet_options).join("\n"));
+                    } else {
+                        text.push_line(textwrap::wrap(line, &normal_options).join("\n"));
+                    }
+                }
+                Paragraph::new(text).render(location, buf);
+  kda_COMMENTED_OUT */
+/* kda_COMMENTED_OUT
+                let wrapped_lines = textwrap::wrap(&self.help_content, &options);
+                Paragraph::new(Line::from(wrapped_lines))
+  kda_COMMENTED_OUT */
                 Paragraph::new(self.help_content.clone())
 /* kda_COMMENTED_OUT
-                    .wrap(Wrap::default())
+                    .wrap(Wrap{ trim: false })
   kda_COMMENTED_OUT */
-                    .wrap(Wrap{ trim: true })
                     .render(location, buf);
             },
         }
@@ -848,8 +873,10 @@ mod tests {
                 if help.is_empty() {
                     help_missing = true;
                     println!("ERROR: empty help found for =>{}<=", ke.help_text);
+/* kda_COMMENTED_OUT
                 } else {
                     println!("INFO: help found for =>{}<= =>{}<=", ke.help_text, help);
+  kda_COMMENTED_OUT */
                 }
             } else {
                 help_missing = true;
