@@ -53,6 +53,20 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 help_text: "#27",
             }
         ),
+        (KeyCode::Char('+'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            // TODO: convert to method, because called elsewhere
+                            app.calculator.update_value();
+                            app.calculator.set_pending_operation(Operation::Add);
+                            app.accumulator.clear();
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "plus",
+                help_text: "+",
+            }
+        ),
         (KeyCode::Char('?'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -63,6 +77,84 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     ]),
                 hint_text: "help",
                 help_text: "quest",
+            }
+        ),
+        (KeyCode::Char('a'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("a");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "a",
+                help_text: "a",
+            }
+        ),
+        (KeyCode::Char('b'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("b");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "b",
+                help_text: "b",
+            }
+        ),
+        (KeyCode::Char('c'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("c");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "c",
+                help_text: "c",
+            }
+        ),
+        (KeyCode::Char('d'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("d");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "d",
+                help_text: "d",
+            }
+        ),
+        (KeyCode::Char('e'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("e");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "e",
+                help_text: "e",
+            }
+        ),
+        (KeyCode::Char('f'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("f");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                hint_text: "f",
+                help_text: "f",
             }
         ),
         (KeyCode::Char('q'),
@@ -102,10 +194,141 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 help_text: "1",
             }
         ),
+        (KeyCode::Char('2'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("2");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(2); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(2); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(2); }) as KeyOperation),
+                    ]),
+                hint_text: "two",
+                help_text: "2",
+            }
+        ),
+        (KeyCode::Char('3'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("3");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(3); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(3); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(3); }) as KeyOperation),
+                    ]),
+                hint_text: "three",
+                help_text: "3",
+            }
+        ),
+        (KeyCode::Char('4'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("4");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(4); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(4); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(4); }) as KeyOperation),
+                    ]),
+                hint_text: "four",
+                help_text: "4",
+            }
+        ),
+        (KeyCode::Char('5'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("5");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(5); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(5); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(5); }) as KeyOperation),
+                    ]),
+                hint_text: "five",
+                help_text: "5",
+            }
+        ),
+        (KeyCode::Char('6'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("6");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(6); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(6); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(6); }) as KeyOperation),
+                    ]),
+                hint_text: "six",
+                help_text: "6",
+            }
+        ),
+        (KeyCode::Char('7'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                                app.accumulate("7");
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(7); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(7); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(7); }) as KeyOperation),
+                    ]),
+                hint_text: "seven",
+                help_text: "7",
+            }
+        ),
+        (KeyCode::Char('8'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            match app.calculator.state.get_numeric_base() {
+                                NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("8"),
+                                _ => {},
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(8); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(8); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(8); }) as KeyOperation),
+                    ]),
+                hint_text: "eight",
+                help_text: "8",
+            }
+        ),
+        (KeyCode::Char('9'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            match app.calculator.state.get_numeric_base() {
+                                NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("9"),
+                                _ => {},
+                            }
+                        }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(9); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.memory_registers_store(9); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(9); }) as KeyOperation),
+                    ]),
+                hint_text: "nine",
+                help_text: "9",
+            }
+        ),
     ])
 });
 
 
+// TODO: rework this to be string on left as only used for display
 pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
@@ -310,9 +533,7 @@ impl App {
                         self.memory_registers_visible = ! self.memory_registers_visible;
                     }
                     KeyCode::Char(c) => {
-                        if NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()].contains(&c) {
-                            self.accumulator.push(c);
-                        } else if let Some(operation) = OPERATION_KEYS.get(&c) {
+                        if let Some(operation) = OPERATION_KEYS.get(&c) {
                             self.calculator.update_value();
                             self.calculator.set_pending_operation(operation.clone());
                             self.accumulator.clear();
