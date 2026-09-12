@@ -51,8 +51,8 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                                 app.accumulator.pop();
                             }
                         } else {
-                            app.calculator.clear();
                             app.accumulator.clear();
+                            app.calculator.clear();
                         }
                         app.parse_and_update_accumulator();
                     }) as KeyOperation),
@@ -77,7 +77,10 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Esc,
             KeyEntry {
                 mode_op: HashMap::from([
-                    (Mode::Calculating, (|app| { app.calculator.clear(); }) as KeyOperation),
+                    (Mode::Calculating, (|app| {
+                        app.accumulator.clear();
+                        app.calculator.clear();
+                    }) as KeyOperation),
                     (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
@@ -712,7 +715,7 @@ impl App {
         frame.set_cursor_position(Position{x: self.size.width - 1, y: self.size.height - 1});
     }
 
-    /// updates the application's state based on user input
+    // updates the application's state based on user input
     fn handle_events(&mut self) -> std::io::Result<()> {
         match event::read()? {
             // it's important to check that the event is a key press event as

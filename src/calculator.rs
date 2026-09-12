@@ -65,8 +65,6 @@ impl Calculator {
         self.state.accumulator = None;
     }
 
-
-
     pub fn set_pending_operation(&mut self, operation: Operation) {
         self.state.pending_operation = Some(operation);
     }

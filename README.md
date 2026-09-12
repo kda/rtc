@@ -21,7 +21,6 @@ Text-based calculator written in Rust.
 -   detect and enforce maximum length of entry of value
 -   consider a help screen which labels the accumulator and pending operation and current value (quick tour?)
 ## bug
--   Esc clears accumulator, but it still shows a value
 -   conversion breakages:
     -   Octal -> Hex does not convert accumulator
     -   Octal (Decimal) (27) -> ??? (Decimal) (4067000000)
