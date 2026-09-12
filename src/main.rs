@@ -28,6 +28,7 @@ enum Mode {
     SignificantDigits,
     AskingHelp,
     ShowingHelp,
+    ShowError,
 }
 
 type KeyOperation = fn(app: &mut App);
@@ -85,6 +86,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                 ]),
                 //hint: "clear",
                 help_heading: "escape",
@@ -340,6 +342,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::ShowingHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
                 //hint: "help",
                 help_heading: "bing",
@@ -582,6 +585,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
                         (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                        (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     ]),
                 //hint: "quit",
                 help_heading: "q",
@@ -797,7 +801,9 @@ impl App {
     }
 
     fn apply_operation(&mut self, op: Operation) {
-        self.calculator.update_value();
+        if let Err(_) = self.calculator.update_value() {
+            self.mode = Mode::ShowError;
+        }
         self.calculator.set_pending_operation(op);
         self.accumulator.clear();
         // TODO: Is this required?
@@ -806,7 +812,9 @@ impl App {
 
     // TODO: consider merging with apply_operations
     fn apply_equals(&mut self) {
-        self.calculator.update_value();
+        if let Err(_) = self.calculator.update_value() {
+            self.mode = Mode::ShowError;
+        }
         self.accumulator.clear();
         self.parse_and_update_accumulator();
     }
@@ -963,54 +971,52 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
-        if let Some(error) = &self.calculator.state.get_error() {
-            // error
-            location.x = 1;
-            location.y = 2;
-            location.width = DISPLAY_WIDTH - 2;
-            location.height = 1;
-            Line::raw(format!("{}", ERROR_NAMES[&error]))
-                .centered()
-                .render(location, buf);
-        } else {
-            // accumulator and pending operation
-            location.x = 1;
-            location.y = 1;
-            location.width = DISPLAY_WIDTH - 2;
-            location.height = 8;
-            let mut text = Text::default();
-            let mut line = Line::default();
-            if let Some(operation) = &self.calculator.state.get_pending_operation() {
-                line.push_span(format!("{:>4} ", OPERATION_NAMES[&operation]));
-            } else {
-                line.push_span("     ");
+        location.x = DISPLAY_X + 1;
+        location.width = DISPLAY_WIDTH - 2;
+        match self.mode {
+            Mode::ShowError => {
+                let Some(error) = &self.calculator.state.get_error() else {
+                    panic!("ERROR: display mode is ShowError, but calculator has no error");
+                };
+                location.y = DISPLAY_Y + 1;
+                location.height = 2;
+                let mut text = Text::default();
+                text.push_line(Line::raw("ERROR").centered());
+                text.push_line(Line::raw(format!("{}", ERROR_NAMES[&error])).centered());
+                text.render(location, buf);
             }
-            line.push_span(&self.accumulator);
-            text.push_line(line);
-            text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
-            text.render(location, buf);
+            _ => {
+                // accumulator and pending operation
+                location.y = DISPLAY_Y + 1;
+                location.height = 2;
+                let mut text = Text::default();
+                let mut line = Line::default();
+                if let Some(operation) = &self.calculator.state.get_pending_operation() {
+                    line.push_span(format!("{:>4} ", OPERATION_NAMES[&operation]));
+                } else {
+                    line.push_span("     ");
+                }
+                line.push_span(&self.accumulator);
+                text.push_line(line);
+
+                // current value
+                text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
+                text.render(location, buf);
+
+                // numeric base
+                location.y = DISPLAY_HEIGHT - 2;
+                location.height = 1;
+                Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.get_numeric_base()]))
+                    .render(location, buf);
+
+                // numeric mode
+                location.x = DISPLAY_WIDTH - 4;
+                location.width = 3;
+                Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.get_numeric_mode()]))
+                    .right_aligned()
+                    .render(location, buf);
+            }
         }
-
-        // numeric base
-        location = Rect{
-            x: 1,
-            y: DISPLAY_HEIGHT - 2,
-            width: 8,
-            height: 1,
-        };
-        Line::raw(format!("{}", NUMERIC_BASE_NAMES[&self.calculator.state.get_numeric_base()]))
-            .render(location, buf);
-
-        // numeric mode
-        location = Rect{
-            x: DISPLAY_WIDTH - 4,
-            y: DISPLAY_HEIGHT - 2,
-            width: 3,
-            height: 1,
-        };
-        Line::raw(format!("{}", NUMERIC_MODE_NAMES[&self.calculator.get_numeric_mode()]))
-            .right_aligned()
-            .render(location, buf);
 
         // A nice box for Keypad
         location.x = KEYPAD_X;
@@ -1115,6 +1121,9 @@ impl Widget for &App {
             },
             Mode::ShowingHelp => {
                 self.render_keypad_content(area, buf, &self.help_content);
+            },
+            Mode::ShowError => {
+                // nothing to show on keypad
             },
         }
 

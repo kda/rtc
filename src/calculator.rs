@@ -69,7 +69,7 @@ impl Calculator {
         self.state.pending_operation = Some(operation);
     }
 
-    pub fn update_value(&mut self) {
+    pub fn update_value(&mut self) -> Result<(), Error> {
         if let Some(value) = self.state.accumulator {
             if let Some(operation) = &self.state.pending_operation {
                 match operation {
@@ -79,14 +79,14 @@ impl Calculator {
                     Operation::Divide => {
                         if value.get_integer() == 0 {
                             self.state.error = Some(Error::DivideByZero);
-                            return;
+                            return Err(Error::DivideByZero);
                         }
                         self.state.value /= value
                     }
                     Operation::Modulo => {
                         if value.get_integer() == 0 {
                             self.state.error = Some(Error::DivideByZero);
-                            return;
+                            return Err(Error::DivideByZero);
                         }
                         self.state.value %= value
                     }
@@ -99,6 +99,7 @@ impl Calculator {
             self.state.accumulator = None;
             self.state.pending_operation = None;
         }
+        Ok(())
     }
 
     pub fn clear(&mut self) {
