@@ -32,25 +32,61 @@ enum Mode {
 
 type KeyOperation = fn(app: &mut App);
 
+#[derive(Default)]
 struct KeyEntry<'a> {
     mode_op: HashMap<Mode, KeyOperation>,
-    hint_text: &'a str,
-    help_text: &'a str,
+    help_heading: &'a str,
+    name: Option<String>,
+    //hint: Option<String>,
 }
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
+        (KeyCode::Backspace,
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_error().is_none() {
+                            if app.accumulator.len() > 0 {
+                                app.accumulator.pop();
+                            }
+                        } else {
+                            app.calculator.clear();
+                            app.accumulator.clear();
+                        }
+                        app.parse_and_update_accumulator();
+                    }) as KeyOperation),
+                ]),
+                //hint: "del",
+                help_heading: "backspace",
+                name: Some("bs".to_string()),
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Enter,
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| { app.apply_equals(); }) as KeyOperation),
+                ]),
+                //hint: "enter",
+                help_heading: "enter",
+                name: Some("ret".to_string()),
+                ..Default::default()
+            }
+        ),
         (KeyCode::Esc,
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.calculator.clear(); }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                        (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                        (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    ]),
-                hint_text: "clear",
-                help_text: "#27",
+                    (Mode::Calculating, (|app| { app.calculator.clear(); }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                ]),
+                //hint: "clear",
+                help_heading: "escape",
+                name: Some("esc".to_string()),
+                ..Default::default()
             }
         ),
         (KeyCode::Char('%'),
@@ -58,8 +94,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Modulo); }) as KeyOperation),
                     ]),
-                hint_text: "percnt",
-                help_text: "percnt",
+                //hint: "mod",
+                help_heading: "percent",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('*'),
@@ -67,8 +104,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Multiply); }) as KeyOperation),
                     ]),
-                hint_text: "ast",
-                help_text: "ast",
+                //hint: "mul",
+                help_heading: "asterisk",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('+'),
@@ -76,8 +114,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Add); }) as KeyOperation),
                     ]),
-                hint_text: "plus",
-                help_text: "plus",
+                //hint: "add",
+                help_heading: "plus",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('-'),
@@ -85,8 +124,25 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Subtract); }) as KeyOperation),
                     ]),
-                hint_text: "minus",
-                help_text: "minus",
+                //hint: "sub",
+                help_heading: "minus",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('.'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.get_numeric_mode() != NumericMode::Integer
+                                && app.accumulator.find('.').is_none() {
+                            app.accumulator.push('.');
+                            app.parse_and_update_accumulator();
+                        }
+                    }) as KeyOperation),
+                ]),
+                //hint: "point",
+                help_heading: "dot",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('/'),
@@ -94,153 +150,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Divide); }) as KeyOperation),
                     ]),
-                hint_text: "sol",
-                help_text: "sol",
-            }
-        ),
-        (KeyCode::Char('?'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                    ]),
-                hint_text: "help",
-                help_text: "quest",
-            }
-        ),
-        (KeyCode::Char('F'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                         (Mode::Calculating, (|app| {
-                            if app.calculator.get_numeric_mode() != NumericMode::Integer {
-                                app.mode = Mode::SignificantDigits;
-                            }
-                        }) as KeyOperation),
-                ]),
-                hint_text: "F",
-                help_text: "F",
-            }
-        ),
-        (KeyCode::Char('M'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            app.memory_registers_visible = ! app.memory_registers_visible;
-                        }) as KeyOperation),
-                ]),
-                hint_text: "M",
-                help_text: "M",
-            }
-        ),
-        (KeyCode::Char('a'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("a");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "a",
-                help_text: "a",
-            }
-        ),
-        (KeyCode::Char('b'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("b");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "b",
-                help_text: "b",
-            }
-        ),
-        (KeyCode::Char('c'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("c");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "c",
-                help_text: "c",
-            }
-        ),
-        (KeyCode::Char('d'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("d");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "d",
-                help_text: "d",
-            }
-        ),
-        (KeyCode::Char('e'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("e");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "e",
-                help_text: "e",
-            }
-        ),
-        (KeyCode::Char('f'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("f");
-                            }
-                        }) as KeyOperation),
-                    ]),
-                hint_text: "f",
-                help_text: "f",
-            }
-        ),
-        (KeyCode::Char('r'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
-                ]),
-                hint_text: "r",
-                help_text: "r",
-            }
-        ),
-        (KeyCode::Char('s'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
-                ]),
-                hint_text: "s",
-                help_text: "s",
-            }
-        ),
-        (KeyCode::Char('q'),
-            KeyEntry {
-                mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
-                    ]),
-                hint_text: "quit",
-                help_text: "q",
+                //hint: "div",
+                help_heading: "slash",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('0'),
@@ -251,8 +163,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
                     ]),
-                hint_text: "zero",
-                help_text: "0",
+                //hint: "zero",
+                help_heading: "0",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('1'),
@@ -263,8 +176,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(1); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(1); }) as KeyOperation),
                     ]),
-                hint_text: "one",
-                help_text: "1",
+                //hint: "one",
+                help_heading: "1",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('2'),
@@ -279,8 +193,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(2); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(2); }) as KeyOperation),
                     ]),
-                hint_text: "two",
-                help_text: "2",
+                //hint: "two",
+                help_heading: "2",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('3'),
@@ -295,8 +210,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(3); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(3); }) as KeyOperation),
                     ]),
-                hint_text: "three",
-                help_text: "3",
+                //hint: "three",
+                help_heading: "3",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('4'),
@@ -311,8 +227,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(4); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(4); }) as KeyOperation),
                     ]),
-                hint_text: "four",
-                help_text: "4",
+                //hint: "four",
+                help_heading: "4",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('5'),
@@ -327,8 +244,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(5); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(5); }) as KeyOperation),
                     ]),
-                hint_text: "five",
-                help_text: "5",
+                //hint: "five",
+                help_heading: "5",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('6'),
@@ -343,8 +261,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(6); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(6); }) as KeyOperation),
                     ]),
-                hint_text: "six",
-                help_text: "6",
+                //hint: "six",
+                help_heading: "6",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('7'),
@@ -359,8 +278,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(7); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(7); }) as KeyOperation),
                     ]),
-                hint_text: "seven",
-                help_text: "7",
+                //hint: "seven",
+                help_heading: "7",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('8'),
@@ -376,8 +296,9 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(8); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(8); }) as KeyOperation),
                     ]),
-                hint_text: "eight",
-                help_text: "8",
+                //hint: "eight",
+                help_heading: "8",
+                ..Default::default()
             }
         ),
         (KeyCode::Char('9'),
@@ -393,8 +314,275 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(9); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(9); }) as KeyOperation),
                     ]),
-                hint_text: "nine",
-                help_text: "9",
+                //hint: "nine",
+                help_heading: "9",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('='),
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| { app.apply_equals(); }) as KeyOperation),
+                ]),
+                //hint: "equals",
+                help_heading: "equals",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('?'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::ShowingHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    ]),
+                //hint: "help",
+                help_heading: "bing",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('A'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.set_numeric_mode(NumericMode::Float);
+                    }) as KeyOperation),
+                ]),
+                help_heading: "A",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('B'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.calculator.set_numeric_base(NumericBase::Binary);
+                    }) as KeyOperation),
+                ]),
+                //hint: "binary",
+                help_heading: "B",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('D'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.calculator.set_numeric_base(NumericBase::Decimal);
+                    }) as KeyOperation),
+                ]),
+                //hint: "decimal (base-10)",
+                help_heading: "D",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('E'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        // TODO: add support for display uppercase 'E' if in caps mode
+                        if app.calculator.get_numeric_mode() == NumericMode::Scientific
+                                && app.accumulator.find('e').is_none() {
+                            app.accumulator.push_str("e+");
+                            app.parse_and_update_accumulator();
+                        }
+                    }) as KeyOperation),
+                ]),
+                //hint: "exponent",
+                help_heading: "E",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('F'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| {
+                            if app.calculator.get_numeric_mode() != NumericMode::Integer {
+                                app.mode = Mode::SignificantDigits;
+                            }
+                        }) as KeyOperation),
+                ]),
+                //hint: "F",
+                help_heading: "F",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('H'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.calculator.set_numeric_base(NumericBase::Hexadecimal);
+                    }) as KeyOperation),
+                ]),
+                //hint: "hexadecimal",
+                help_heading: "H",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('I'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.set_numeric_mode(NumericMode::Integer);
+                    }) as KeyOperation),
+                ]),
+                help_heading: "I",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('M'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            app.memory_registers_visible = ! app.memory_registers_visible;
+                        }) as KeyOperation),
+                ]),
+                //hint: "M",
+                help_heading: "M",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('O'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.calculator.set_numeric_base(NumericBase::Octal);
+                    }) as KeyOperation),
+                ]),
+                //hint: "octal",
+                help_heading: "O",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('S'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        app.set_numeric_mode(NumericMode::Scientific);
+                    }) as KeyOperation),
+                ]),
+                help_heading: "S",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('a'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("a");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "a",
+                help_heading: "a",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('b'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("b");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "b",
+                help_heading: "b",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('c'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("c");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "c",
+                help_heading: "c",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('d'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("d");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "d",
+                help_heading: "d",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('e'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("e");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "e",
+                help_heading: "e",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('f'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| {
+                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                                app.accumulate("f");
+                            }
+                        }) as KeyOperation),
+                    ]),
+                //hint: "f",
+                help_heading: "f",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('r'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
+                ]),
+                //hint: "r",
+                help_heading: "r",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('s'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
+                ]),
+                //hint: "s",
+                help_heading: "s",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('q'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
+                        (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    ]),
+                //hint: "quit",
+                help_heading: "q",
+                ..Default::default()
             }
         ),
     ])
@@ -411,6 +599,7 @@ pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = L
     ])
 });
 
+// TODO: Invert this to expedite rendering hints screen
 pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::new(|| {
     HashMap::from([
         ('D', NumericBase::Decimal),
@@ -420,6 +609,7 @@ pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::ne
     ])
 });
 
+// TODO: deprecate this in favor of the key_hint field of KeyEntry.
 pub const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, "Dec"),
@@ -438,6 +628,7 @@ pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::n
     ])
 });
 
+// TODO: Invert this to expedite rendering hints screen
 pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
     HashMap::from([
         ('I', NumericMode::Integer),
@@ -446,6 +637,7 @@ pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::ne
     ])
 });
 
+// TODO: deprecate this in favor of the key_hint field of KeyEntry.
 pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericMode::Integer, "int"),
@@ -538,117 +730,13 @@ impl App {
             if let Some(ko) = ke.mode_op.get(&self.mode) {
                 ko(self);
             } else if self.mode == Mode::AskingHelp {
-                if let Some(help_content) = help_content::extract_key_help_content(ke.help_text) {
+                if let Some(help_content) = help_content::extract_key_help_content(ke.help_heading) {
                     self.help_content = help_content;
                     self.mode = Mode::ShowingHelp;
                 } else {
-                    panic!("no help for ==>{}<==", ke.help_text);
+                    panic!("no help for ==>{}<==", ke.help_heading);
                 }
             }
-            return;
-        }
-        match self.mode {
-            Mode::Calculating => {
-                match key_event.code {
-                    KeyCode::Backspace => {
-                        if self.calculator.state.get_error().is_none() {
-                            if self.accumulator.len() > 0 {
-                                self.accumulator.pop();
-                            }
-                        } else {
-                            self.calculator.clear();
-                            self.accumulator.clear();
-                        }
-                        self.parse_and_update_accumulator();
-                    }
-                    KeyCode::Enter | KeyCode::Char('=') => {
-                        self.calculator.update_value();
-                        self.accumulator.clear();
-                        self.parse_and_update_accumulator();
-                    },
-                    KeyCode::Char('.') => {
-                        if self.calculator.get_numeric_mode() != NumericMode::Integer
-                                && self.accumulator.find('.').is_none() {
-                            self.accumulator.push('.');
-                            self.parse_and_update_accumulator();
-                        }
-                    }
-                    KeyCode::Char('E') => {
-                        // TODO: add support for display uppercase 'E' if in caps mode
-                        if self.calculator.get_numeric_mode() == NumericMode::Scientific
-                                && self.accumulator.find('e').is_none() {
-                            self.accumulator.push_str("e+");
-                            self.parse_and_update_accumulator();
-                        }
-                    }
-                    KeyCode::Char(c) => {
-                        if let Some(base) = NUMERIC_BASE_KEYS.get(&c) {
-                            self.calculator.set_numeric_base(*base);
-                        } else if let Some(mode) = NUMERIC_MODE_KEYS.get(&c) {
-                            self.calculator.set_numeric_mode(*mode);
-                            for mr in self.memory_registers.iter_mut() {
-                                mr.set_numeric_mode(*mode);
-                            }
-                        }
-                        self.parse_and_update_accumulator();
-                    }
-                    _ => {},
-                }
-            }
-            Mode::SignificantDigits => {
-                match key_event.code {
-                    KeyCode::Esc => {},
-                    KeyCode::Char('?') => {},
-                    KeyCode::Char('q') => self.request_exit(),
-                    KeyCode::Char(c) => {
-                        if let Some(number) = c.to_digit(10) {
-                            if number > 0 && number <= 9 {
-                                self.significant_digits = number as usize;
-                            }
-                        }
-                    },
-                    _ => {}
-                }
-                self.mode = Mode::Calculating;
-            },
-            Mode::MemoryStore => {
-                match key_event.code {
-                    KeyCode::Esc => {},
-                    KeyCode::Char('?') => {},
-                    KeyCode::Char('q') => self.request_exit(),
-                    KeyCode::Char(c) => {
-                        if let Some(index) = c.to_digit(10) {
-                            if index > 0 && index <= 9 {
-                                self.memory_registers[index as usize] = self.calculator.state.get_value();
-                            }
-                        }
-                    },
-                    _ => {}
-                }
-                self.mode = Mode::Calculating;
-            },
-            Mode::MemoryRecall => {
-                match key_event.code {
-                    KeyCode::Esc => {},
-                    KeyCode::Char('?') => {},
-                    KeyCode::Char('q') => self.request_exit(),
-                    KeyCode::Char(c) => {
-                        if let Some(index) = c.to_digit(10) {
-                            if index > 0 && index <= 9 {
-                                if self.calculator.get_numeric_mode() == NumericMode::Integer {
-                                    self.accumulator = self.memory_registers[index as usize].get_integer().to_string();
-                                } else {
-                                    self.accumulator = self.memory_registers[index as usize].get_decimal().to_string();
-                                }
-                                self.parse_and_update_accumulator();
-                            }
-                        }
-                    },
-                    _ => {}
-                }
-                self.mode = Mode::Calculating;
-            },
-            _ => {},
         }
     }
 
@@ -713,6 +801,13 @@ impl App {
         //self.parse_and_update_accumulator();
     }
 
+    // TODO: consider merging with apply_operations
+    fn apply_equals(&mut self) {
+        self.calculator.update_value();
+        self.accumulator.clear();
+        self.parse_and_update_accumulator();
+    }
+
     fn parse_and_update_accumulator(&mut self) {
         if self.accumulator.len() == 0 {
             self.calculator.clear_accumulator();
@@ -757,6 +852,14 @@ impl App {
         self.mode = Mode::Calculating;
     }
 
+    fn set_numeric_mode(&mut self, mode: NumericMode) {
+        self.calculator.set_numeric_mode(mode);
+        for mr in self.memory_registers.iter_mut() {
+            mr.set_numeric_mode(mode);
+        }
+        self.parse_and_update_accumulator();
+    }
+
     fn memory_registers_store(&mut self, index: usize) {
         self.memory_registers[index] = self.calculator.state.get_value();
         self.mode = Mode::Calculating;
@@ -794,6 +897,41 @@ impl App {
             .iter().map(|c| format!(" {c}")).collect();
         line.push_span(digits);
         text.push_line(line.centered());
+        text.render(location, buf);
+    }
+
+    fn render_keypad_content(&self, _area: Rect, buf: &mut Buffer, content: &String) {
+        let location = Rect{
+            x: KEYPAD_X + 1,
+            y: KEYPAD_Y + 1,
+            width: KEYPAD_WIDTH - 2,
+            height: KEYPAD_HEIGHT - 4,
+        };
+        let mut text = Text::default();
+        for content_line in content.split('\n') {
+            if content_line.len() > location.width as usize {
+                let indent = content_line.starts_with('-');
+                //let mut second_line = false;
+                let mut line = Line::default();
+                for word in content_line.split(' ') {
+                    if line.width() + 1 + word.len() > location.width as usize {
+                        text.push_line(line);
+                        //second_line = true;
+                        line = Line::raw("");
+                        if indent {
+                            line.push_span(" ");
+                        }
+                    }
+                    if line.width() > 0 {
+                        line.push_span(" ");
+                    }
+                    line.push_span(word)
+                }
+                text.push_line(line);
+            } else {
+                text.push_line(content_line);
+            }
+        }
         text.render(location, buf);
     }
 }
@@ -956,56 +1094,41 @@ impl Widget for &App {
                 self.render_digits_keypad(area, buf, "location to recall from");
             },
             Mode::AskingHelp => {
-                // TODO: show all keys
-            },
-            Mode::ShowingHelp => {
-                let location = Rect{
-                    x: KEYPAD_X + 1,
-                    y: KEYPAD_Y + 1,
-                    width: KEYPAD_WIDTH - 2,
-                    height: KEYPAD_HEIGHT - 4,
-                };
-                let mut text = Text::default();
-                for help_line in self.help_content.split('\n') {
-                    if help_line.len() > location.width as usize {
-                        let indent = help_line.starts_with('-');
-                        //let mut second_line = false;
-                        let mut line = Line::default();
-                        for word in help_line.split(' ') {
-                            if line.width() + 1 + word.len() > location.width as usize {
-                                text.push_line(line);
-                                //second_line = true;
-                                line = Line::raw("");
-                                if indent {
-                                    line.push_span(" ");
-                                }
-                            }
-                            if line.width() > 0 {
-                                line.push_span(" ");
-                            }
-                            line.push_span(word)
-                        }
-                        text.push_line(line);
+                let mut keys = Vec::<String>::new();
+                for (key, ke) in KEYS_MAPPING.iter() {
+                    if let Some(name) = &ke.name {
+                        keys.push(name.clone());
                     } else {
-                        text.push_line(help_line);
+                        if let KeyCode::Char(c) = key {
+                            keys.push(c.to_string());
+                        } else {
+                            panic!("ERROR: key has no valid name =>{}<=", ke.help_heading);
+                        }
                     }
                 }
-                text.render(location, buf);
+                keys.sort();
+                let content = keys.join(" ");
+                self.render_keypad_content(area, buf, &content);
+            },
+            Mode::ShowingHelp => {
+                self.render_keypad_content(area, buf, &self.help_content);
             },
         }
 
-        // Always present
-        let mut text = Text::default();
-        let mut line = Line::default();
-        const WIDTH: usize = 11;
-        line.push_span(format!("{:<1$}", "ESC: clear", WIDTH));
-        line.push_span(format!("{:^1$}", "?: help", WIDTH));
-        line.push_span(format!("{:>1$}", "q: quit", WIDTH));
-        text.push_line(line.centered());
+        // Nearly Always present
+        if self.mode != Mode::AskingHelp {
+            let mut text = Text::default();
+            let mut line = Line::default();
+            const WIDTH: usize = 11;
+            line.push_span(format!("{:<1$}", "ESC: clear", WIDTH));
+            line.push_span(format!("{:^1$}", "?: help", WIDTH));
+            line.push_span(format!("{:>1$}", "q: quit", WIDTH));
+            text.push_line(line.centered());
 
-        location.height = text.height() as u16;
-        location.y = DISPLAY_HEIGHT + KEYPAD_HEIGHT - location.height - 1;
-        text.render(location, buf);
+            location.height = text.height() as u16;
+            location.y = DISPLAY_HEIGHT + KEYPAD_HEIGHT - location.height - 1;
+            text.render(location, buf);
+        }
 
         if self.memory_registers_visible || self.mode == Mode::MemoryStore || self.mode == Mode::MemoryRecall {
             location = Rect{
@@ -1021,8 +1144,8 @@ impl Widget for &App {
             location.x += 1;
             location.y += 1;
             location.width -= 2;
-            text = Text::default();
-            line = Line::default();
+            let mut text = Text::default();
+            let mut line = Line::default();
             line.push_span("memory registers");
             text.push_line(line.centered());
 
@@ -1114,21 +1237,21 @@ mod tests {
     }
 
     #[test]
-    fn help_text_for_every_key() {
+    fn help_heading_for_every_key() {
         let mut help_missing = false;
         for (_, ke) in KEYS_MAPPING.iter() {
-            if let Some(help) = help_content::extract_key_help_content(ke.help_text) {
+            if let Some(help) = help_content::extract_key_help_content(ke.help_heading) {
                 if help.is_empty() {
                     help_missing = true;
-                    println!("ERROR: empty help found for =>{}<=", ke.help_text);
+                    println!("ERROR: empty help found for =>{}<=", ke.help_heading);
 /* kda_COMMENTED_OUT
                 } else {
-                    println!("INFO: help found for =>{}<= =>{}<=", ke.help_text, help);
+                    println!("INFO: help found for =>{}<= =>{}<=", ke.help_heading, help);
   kda_COMMENTED_OUT */
                 }
             } else {
                 help_missing = true;
-                println!("ERROR: no help found for =>{}<=", ke.help_text);
+                println!("ERROR: no help found for =>{}<=", ke.help_heading);
             }
         }
         assert!(!help_missing);

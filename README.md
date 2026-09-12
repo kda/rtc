@@ -16,13 +16,16 @@ Text-based calculator written in Rust.
 - 	add color (if terminal capable and/or if flag)
 - 	check terminal size at startup for available space (exit gracefully if insufficient.)
 -   display commas (modal, also consider EURO style (.  <-> ,)) (possibly detect based on locale?)
--   build out help system
 -   develop tests to cover all features
 -   add 'V' to show version
 -   detect and enforce maximum length of entry of value
--   implement memory registers
+-   consider a help screen which labels the accumulator and pending operation and current value (quick tour?)
 ## bug
 -   Esc clears accumulator, but it still shows a value
+-   conversion breakages:
+    -   Octal -> Hex does not convert accumulator
+    -   Octal (Decimal) (27) -> ??? (Decimal) (4067000000)
+    -   Octal (Decimal) (27) -> ??? (Scientific) (crashes)
 ## command line
 -   add clap to support version and other command line flags
 -   support -V for version
