@@ -248,6 +248,10 @@ impl State {
         return self.numeric_base;
     }
 
+    pub fn get_accumulator(&self) -> Option<ValuePair> {
+        return self.accumulator;
+    }
+
     pub fn get_pending_operation(&self) -> Option<Operation> {
         return self.pending_operation;
     }

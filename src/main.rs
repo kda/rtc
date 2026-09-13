@@ -364,7 +364,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                     (Mode::Calculating, (|app| {
-                        app.calculator.set_numeric_base(NumericBase::Binary);
+                        app.set_numeric_base(NumericBase::Binary);
                     }) as KeyOperation),
                 ]),
                 //hint: "binary",
@@ -376,7 +376,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                     (Mode::Calculating, (|app| {
-                        app.calculator.set_numeric_base(NumericBase::Decimal);
+                        app.set_numeric_base(NumericBase::Decimal);
                     }) as KeyOperation),
                 ]),
                 //hint: "decimal (base-10)",
@@ -419,7 +419,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                     (Mode::Calculating, (|app| {
-                        app.calculator.set_numeric_base(NumericBase::Hexadecimal);
+                        app.set_numeric_base(NumericBase::Hexadecimal);
                     }) as KeyOperation),
                 ]),
                 //hint: "hexadecimal",
@@ -454,7 +454,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                     (Mode::Calculating, (|app| {
-                        app.calculator.set_numeric_base(NumericBase::Octal);
+                        app.set_numeric_base(NumericBase::Octal);
                     }) as KeyOperation),
                 ]),
                 //hint: "octal",
@@ -863,12 +863,22 @@ impl App {
         self.mode = Mode::Calculating;
     }
 
+    fn set_numeric_base(&mut self, base: NumericBase) {
+        self.calculator.set_numeric_base(base);
+        if let Some(accumulator) = self.calculator.state.get_accumulator() {
+            self.accumulator = self.format_value_pair(accumulator);
+        }
+    }
+
     fn set_numeric_mode(&mut self, mode: NumericMode) {
         self.calculator.set_numeric_mode(mode);
         for mr in self.memory_registers.iter_mut() {
             mr.set_numeric_mode(mode);
         }
         self.parse_and_update_accumulator();
+        if let Some(accumulator) = self.calculator.state.get_accumulator() {
+            self.accumulator = self.format_value_pair(accumulator);
+        }
     }
 
     fn memory_registers_store(&mut self, index: usize) {
