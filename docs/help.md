@@ -131,6 +131,11 @@ Binary      (H)
 
 Use base-2 (binary).
 
+## C
+Change sign (C)
+
+Invert the sign of the value in the accumulator.
+
 ## D
 Decimal     (D)
 

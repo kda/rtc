@@ -38,7 +38,6 @@ struct KeyEntry<'a> {
     mode_op: HashMap<Mode, KeyOperation>,
     help_heading: &'a str,
     name: Option<String>,
-    //hint: Option<String>,
 }
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
@@ -58,7 +57,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.parse_and_update_accumulator();
                     }) as KeyOperation),
                 ]),
-                //hint: "del",
                 help_heading: "backspace",
                 name: Some("bs".to_string()),
                 ..Default::default()
@@ -69,7 +67,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                      (Mode::Calculating, (|app| { app.apply_equals(); }) as KeyOperation),
                 ]),
-                //hint: "enter",
                 help_heading: "enter",
                 name: Some("ret".to_string()),
                 ..Default::default()
@@ -88,7 +85,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                 ]),
-                //hint: "clear",
                 help_heading: "escape",
                 name: Some("esc".to_string()),
                 ..Default::default()
@@ -99,7 +95,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Modulo); }) as KeyOperation),
                     ]),
-                //hint: "mod",
                 help_heading: "percent",
                 ..Default::default()
             }
@@ -109,7 +104,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Multiply); }) as KeyOperation),
                     ]),
-                //hint: "mul",
                 help_heading: "asterisk",
                 ..Default::default()
             }
@@ -119,7 +113,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Add); }) as KeyOperation),
                     ]),
-                //hint: "add",
                 help_heading: "plus",
                 ..Default::default()
             }
@@ -129,7 +122,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Subtract); }) as KeyOperation),
                     ]),
-                //hint: "sub",
                 help_heading: "minus",
                 ..Default::default()
             }
@@ -145,7 +137,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         }
                     }) as KeyOperation),
                 ]),
-                //hint: "point",
                 help_heading: "dot",
                 ..Default::default()
             }
@@ -155,7 +146,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.apply_operation(Operation::Divide); }) as KeyOperation),
                     ]),
-                //hint: "div",
                 help_heading: "slash",
                 ..Default::default()
             }
@@ -168,7 +158,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
                     ]),
-                //hint: "zero",
                 help_heading: "0",
                 ..Default::default()
             }
@@ -181,7 +170,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(1); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(1); }) as KeyOperation),
                     ]),
-                //hint: "one",
                 help_heading: "1",
                 ..Default::default()
             }
@@ -198,7 +186,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(2); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(2); }) as KeyOperation),
                     ]),
-                //hint: "two",
                 help_heading: "2",
                 ..Default::default()
             }
@@ -215,7 +202,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(3); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(3); }) as KeyOperation),
                     ]),
-                //hint: "three",
                 help_heading: "3",
                 ..Default::default()
             }
@@ -232,7 +218,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(4); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(4); }) as KeyOperation),
                     ]),
-                //hint: "four",
                 help_heading: "4",
                 ..Default::default()
             }
@@ -249,7 +234,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(5); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(5); }) as KeyOperation),
                     ]),
-                //hint: "five",
                 help_heading: "5",
                 ..Default::default()
             }
@@ -266,7 +250,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(6); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(6); }) as KeyOperation),
                     ]),
-                //hint: "six",
                 help_heading: "6",
                 ..Default::default()
             }
@@ -283,7 +266,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(7); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(7); }) as KeyOperation),
                     ]),
-                //hint: "seven",
                 help_heading: "7",
                 ..Default::default()
             }
@@ -301,7 +283,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(8); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(8); }) as KeyOperation),
                     ]),
-                //hint: "eight",
                 help_heading: "8",
                 ..Default::default()
             }
@@ -319,7 +300,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryStore, (|app| { app.memory_registers_store(9); }) as KeyOperation),
                         (Mode::MemoryRecall, (|app| { app.memory_registers_recall(9); }) as KeyOperation),
                     ]),
-                //hint: "nine",
                 help_heading: "9",
                 ..Default::default()
             }
@@ -329,7 +309,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                      (Mode::Calculating, (|app| { app.apply_equals(); }) as KeyOperation),
                 ]),
-                //hint: "equals",
                 help_heading: "equals",
                 ..Default::default()
             }
@@ -344,7 +323,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::ShowingHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
-                //hint: "help",
                 help_heading: "bing",
                 ..Default::default()
             }
@@ -367,8 +345,41 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.set_numeric_base(NumericBase::Binary);
                     }) as KeyOperation),
                 ]),
-                //hint: "binary",
                 help_heading: "B",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('C'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.get_numeric_mode() == NumericMode::Scientific {
+                            if let Some(index) = app.accumulator.find('e') {
+                                if let Some(sign) = app.accumulator.chars().nth(index + 1) {
+                                    let sign = if sign == '+' { '-' } else { '+' };
+                                    app.accumulator.replace_range((index + 1)..(index + 2), &sign.to_string());
+                                } else {
+                                    panic!("ERROR: unexpected format of accumultor (no sign after 'e') {}", app.accumulator);
+                                }
+                                app.parse_and_update_accumulator();
+                                return;
+                            }
+                        }
+                        let mut insert_negative = true;
+                        if let Some(first) = app.accumulator.chars().next() {
+                            if first == '-' {
+                                insert_negative = false;
+                            }
+                        }
+                        if insert_negative {
+                            app.accumulator.insert(0, '-');
+                        } else {
+                            app.accumulator.remove(0);
+                        }
+                        app.parse_and_update_accumulator();
+                    }) as KeyOperation),
+                ]),
+                help_heading: "C",
                 ..Default::default()
             }
         ),
@@ -379,7 +390,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.set_numeric_base(NumericBase::Decimal);
                     }) as KeyOperation),
                 ]),
-                //hint: "decimal (base-10)",
                 help_heading: "D",
                 ..Default::default()
             }
@@ -396,7 +406,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         }
                     }) as KeyOperation),
                 ]),
-                //hint: "exponent",
                 help_heading: "E",
                 ..Default::default()
             }
@@ -410,7 +419,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                 ]),
-                //hint: "F",
                 help_heading: "F",
                 ..Default::default()
             }
@@ -422,7 +430,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.set_numeric_base(NumericBase::Hexadecimal);
                     }) as KeyOperation),
                 ]),
-                //hint: "hexadecimal",
                 help_heading: "H",
                 ..Default::default()
             }
@@ -445,7 +452,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             app.memory_registers_visible = ! app.memory_registers_visible;
                         }) as KeyOperation),
                 ]),
-                //hint: "M",
                 help_heading: "M",
                 ..Default::default()
             }
@@ -457,7 +463,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.set_numeric_base(NumericBase::Octal);
                     }) as KeyOperation),
                 ]),
-                //hint: "octal",
                 help_heading: "O",
                 ..Default::default()
             }
@@ -482,7 +487,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "a",
                 help_heading: "a",
                 ..Default::default()
             }
@@ -496,7 +500,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "b",
                 help_heading: "b",
                 ..Default::default()
             }
@@ -510,7 +513,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "c",
                 help_heading: "c",
                 ..Default::default()
             }
@@ -524,7 +526,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "d",
                 help_heading: "d",
                 ..Default::default()
             }
@@ -538,7 +539,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "e",
                 help_heading: "e",
                 ..Default::default()
             }
@@ -552,7 +552,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                             }
                         }) as KeyOperation),
                     ]),
-                //hint: "f",
                 help_heading: "f",
                 ..Default::default()
             }
@@ -562,7 +561,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                          (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
                 ]),
-                //hint: "r",
                 help_heading: "r",
                 ..Default::default()
             }
@@ -572,7 +570,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                          (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
                 ]),
-                //hint: "s",
                 help_heading: "s",
                 ..Default::default()
             }
@@ -587,7 +584,6 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                         (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                     ]),
-                //hint: "quit",
                 help_heading: "q",
                 ..Default::default()
             }
@@ -833,7 +829,11 @@ impl App {
                     NumericBase::Octal => radix = 8,
                     NumericBase::Binary => radix = 2,
                 }
-                self.calculator.set_integer_accumulator(i128::from_str_radix(&self.accumulator, radix).unwrap());
+                if self.accumulator == "-" {
+                    self.calculator.set_integer_accumulator(0);
+                } else {
+                    self.calculator.set_integer_accumulator(i128::from_str_radix(&self.accumulator, radix).unwrap());
+                }
             }
             NumericMode::Float => {
                 match self.calculator.state.get_numeric_base() {
