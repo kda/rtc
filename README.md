@@ -25,6 +25,9 @@ Text-based calculator written in Rust.
     -   Octal -> Hex does not convert accumulator
     -   Octal (Decimal) (27) -> ??? (Decimal) (4067000000)
     -   Octal (Decimal) (27) -> ??? (Scientific) (crashes)
+-   entered value does not preserve digits: examples:
+    -   load constant E when in integer mode, then switch to decimal (no digits right of decimal point)
+    -   load constant E when in decimal mode with 2 fixed, then switch to fixed 9 (all zeroes in digits 3-9)
 ## command line
 -   add clap to support version and other command line flags
 -   support -V for version

@@ -1146,6 +1146,8 @@ dependencies = [
  "insta",
  "pulldown-cmark",
  "ratatui",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]

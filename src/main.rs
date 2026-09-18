@@ -10,6 +10,7 @@ use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
 use std::collections::HashMap;
 use std::sync::LazyLock;
+use strum_macros::EnumIter;
 
 mod calculator;
 mod help_content;
@@ -20,14 +21,15 @@ use calculator::NumericMode;
 use calculator::Operation;
 use calculator::Error;
 
-#[derive(Debug, Hash, Eq, PartialEq)]
+#[derive(Debug, EnumIter, Hash, Eq, PartialEq)]
 enum Mode {
     Calculating,
     MemoryStore,
     MemoryRecall,
     SignificantDigits,
+    SelectConstant,
     AskingHelp,
-    ShowingHelp,
+    ShowHelp,
     ShowError,
 }
 
@@ -39,6 +41,9 @@ struct KeyEntry<'a> {
     help_heading: &'a str,
     name: Option<String>,
 }
+
+// in order for the future
+//  [ESC]  ! " # $ [%] & ' ( ) , [- . /] [0-9] : ; < [=] > [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { | } ~ DEL
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
@@ -79,14 +84,24 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         app.accumulator.clear();
                         app.calculator.clear();
                     }) as KeyOperation),
-                    (Mode::SignificantDigits, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    (Mode::MemoryStore, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    (Mode::MemoryRecall, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    (Mode::ShowingHelp, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::SelectConstant, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::ShowError, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                 ]),
                 help_heading: "escape",
                 name: Some("esc".to_string()),
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('#'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                        (Mode::Calculating, (|app| { app.mode = Mode::SelectConstant; }) as KeyOperation),
+                    ]),
+                help_heading: "pound",
                 ..Default::default()
             }
         ),
@@ -318,9 +333,10 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 mode_op: HashMap::from([
                         (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
                         (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::SelectConstant, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
                         (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::ShowingHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::ShowHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
                 help_heading: "bing",
@@ -494,12 +510,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('b'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("b");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("b");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "b",
                 ..Default::default()
             }
@@ -507,12 +523,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('c'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("c");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("c");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "c",
                 ..Default::default()
             }
@@ -520,12 +536,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('d'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("d");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("d");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "d",
                 ..Default::default()
             }
@@ -533,12 +549,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('e'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("e");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("e");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "e",
                 ..Default::default()
             }
@@ -546,12 +562,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('f'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("f");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("f");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "f",
                 ..Default::default()
             }
@@ -559,7 +575,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('r'),
             KeyEntry {
                 mode_op: HashMap::from([
-                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
+                     (Mode::Calculating, (|app| { app.mode = Mode::MemoryRecall; }) as KeyOperation),
                 ]),
                 help_heading: "r",
                 ..Default::default()
@@ -568,7 +584,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('s'),
             KeyEntry {
                 mode_op: HashMap::from([
-                         (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
+                     (Mode::Calculating, (|app| { app.mode = Mode::MemoryStore; }) as KeyOperation),
                 ]),
                 help_heading: "s",
                 ..Default::default()
@@ -577,13 +593,14 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('q'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
-                        (Mode::ShowingHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
-                        (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::SelectConstant, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                ]),
                 help_heading: "q",
                 ..Default::default()
             }
@@ -593,7 +610,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
 
 
 // TODO: rework this to be string on left as only used for display
-pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
+const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
         (NumericBase::Hexadecimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']),
@@ -603,7 +620,7 @@ pub const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = L
 });
 
 // TODO: Invert this to expedite rendering hints screen
-pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::new(|| {
+const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::new(|| {
     HashMap::from([
         ('D', NumericBase::Decimal),
         ('H', NumericBase::Hexadecimal),
@@ -613,7 +630,7 @@ pub const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::ne
 });
 
 // TODO: deprecate this in favor of the key_hint field of KeyEntry.
-pub const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
+const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, "Dec"),
         (NumericBase::Hexadecimal, "Hex"),
@@ -622,7 +639,7 @@ pub const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::ne
     ])
 });
 
-pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
+const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, "DEC (10)"),
         (NumericBase::Hexadecimal, "HEX (16)"),
@@ -632,7 +649,7 @@ pub const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::n
 });
 
 // TODO: Invert this to expedite rendering hints screen
-pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
+const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
     HashMap::from([
         ('I', NumericMode::Integer),
         ('A', NumericMode::Float),
@@ -641,7 +658,7 @@ pub const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::ne
 });
 
 // TODO: deprecate this in favor of the key_hint field of KeyEntry.
-pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
+const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericMode::Integer, "int"),
         (NumericMode::Float, "dec"),
@@ -649,7 +666,7 @@ pub const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::n
     ])
 });
 
-pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
+const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
     HashMap::from([
         (Operation::Add, "+"),
         (Operation::Subtract, "-"),
@@ -659,9 +676,24 @@ pub const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(||
     ])
 });
 
-pub const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
+const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
     HashMap::from([
         (Error::DivideByZero, "divide by zero"),
+    ])
+});
+
+struct ConstantEntry<'a> {
+    name: &'a str,
+    value: f64,
+}
+
+static CONSTANTS_KEYS_MAPPING: LazyLock<HashMap<KeyCode, ConstantEntry>> = LazyLock::new(|| {
+    HashMap::from([
+        (KeyCode::Char('2'), ConstantEntry {name: "sqrt of 2", value: std::f64::consts::SQRT_2 }),
+        (KeyCode::Char('e'), ConstantEntry {name: "e", value: std::f64::consts::E }),
+        (KeyCode::Char('g'), ConstantEntry {name: "golden ratio", value: std::f64::consts::GOLDEN_RATIO }),
+        (KeyCode::Char('p'), ConstantEntry {name: "pi", value: std::f64::consts::PI }),
+        (KeyCode::Char('t'), ConstantEntry {name: "tau", value: std::f64::consts::TAU }),
     ])
 });
 
@@ -669,7 +701,7 @@ pub const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
 const NUMBER_OF_REGISTERS: usize = 10;
 
 #[derive(Debug)]
-pub struct App {
+struct App {
     mode: Mode,
     exit_requested: bool,
     size: Size,
@@ -729,13 +761,29 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match self.mode {
+            Mode::SelectConstant => {
+                if let Some(ce) = CONSTANTS_KEYS_MAPPING.get(&key_event.code) {
+                    let mut vp = calculator::ValuePair::default();
+                    vp.set_numeric_mode(NumericMode::Float);
+                    vp.set_decimal(ce.value);
+                    vp.set_numeric_mode(self.calculator.get_numeric_mode());
+                    self.accumulator = self.format_value_pair(vp);
+                    self.mode = Mode::Calculating;
+                    self.parse_and_update_accumulator();
+                    return;
+                }
+            }
+            _ => { /* never do anything here, because a fall through effect is what is desired here */ },
+        }
+
         if let Some(ke) = KEYS_MAPPING.get(&key_event.code) {
             if let Some(ko) = ke.mode_op.get(&self.mode) {
                 ko(self);
             } else if self.mode == Mode::AskingHelp {
                 if let Some(help_content) = help_content::extract_key_help_content(ke.help_heading) {
                     self.help_content = help_content;
-                    self.mode = Mode::ShowingHelp;
+                    self.mode = Mode::ShowHelp;
                 } else {
                     panic!("no help for ==>{}<==", ke.help_heading);
                 }
@@ -1106,6 +1154,18 @@ impl Widget for &App {
             Mode::SignificantDigits => {
                 self.render_digits_keypad(area, buf, "number of significant digits");
             },
+            Mode::SelectConstant => {
+                let mut lines = Vec::<String>::new();
+                for (key, ce) in CONSTANTS_KEYS_MAPPING.iter() {
+                    let KeyCode::Char(c) = key else {
+                        panic!("ERROR: unexpected non-character key =>{}<= found in SelectContent display", key);
+                    };
+                    lines.push(format!("{}: {:?}", c, ce.name));
+                }
+                lines.sort();
+                let content = lines.join("\n");
+                self.render_keypad_content(area, buf, &content);
+            }
             Mode::MemoryStore => {
                 self.render_digits_keypad(area, buf, "location to store value");
             },
@@ -1129,7 +1189,7 @@ impl Widget for &App {
                 let content = keys.join(" ");
                 self.render_keypad_content(area, buf, &content);
             },
-            Mode::ShowingHelp => {
+            Mode::ShowHelp => {
                 self.render_keypad_content(area, buf, &self.help_content);
             },
             Mode::ShowError => {
@@ -1192,10 +1252,13 @@ fn main() -> std::io::Result<()> {
 mod tests {
     use super::App;
     use super::KEYS_MAPPING;
+    use super::Mode;
     use insta::assert_snapshot;
     use ratatui::{backend::TestBackend, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use crate::help_content;
+
+    use strum::IntoEnumIterator;
 
     struct TestApp {
         app: App,
@@ -1277,5 +1340,22 @@ mod tests {
             }
         }
         assert!(!help_missing);
+    }
+
+    #[test]
+    fn check_functional_coverage_for_always_keys() {
+        let always_keys = vec![KeyCode::Esc, KeyCode::Char('?'), KeyCode::Char('q')];
+        for key in always_keys {
+            assert!(KEYS_MAPPING.contains_key(&key), "no mappying for key =>{}<=", key);
+            for mode in Mode::iter() {
+                // Special case (able to query all keys, including these)
+                if mode == Mode::AskingHelp {
+                    continue;
+                }
+                assert!(KEYS_MAPPING.get(&key).unwrap().mode_op.contains_key(&mode),
+                    "key =>{}<= does not have a mapping for mode =>{:?}<=",
+                    key, mode);
+            }
+        }
     }
 }
