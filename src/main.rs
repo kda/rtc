@@ -3,6 +3,7 @@ use ratatui::{
     DefaultTerminal, Frame,
     prelude::{Line, Position, Size, Text},
 };
+use std::ffi::OsString;
 use clap::Parser;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -684,18 +685,19 @@ const ERROR_NAMES: LazyLock<HashMap<Error, &str>> = LazyLock::new(|| {
     ])
 });
 
-struct ConstantEntry<'a> {
-    name: &'a str,
+#[derive(Clone, Debug)]
+struct ConstantEntry {
+    name: String,
     value: f64,
 }
 
 static CONSTANTS_KEYS_MAPPING: LazyLock<HashMap<KeyCode, ConstantEntry>> = LazyLock::new(|| {
     HashMap::from([
-        (KeyCode::Char('2'), ConstantEntry {name: "sqrt of 2", value: std::f64::consts::SQRT_2 }),
-        (KeyCode::Char('e'), ConstantEntry {name: "e", value: std::f64::consts::E }),
-        (KeyCode::Char('g'), ConstantEntry {name: "golden ratio", value: std::f64::consts::GOLDEN_RATIO }),
-        (KeyCode::Char('p'), ConstantEntry {name: "pi", value: std::f64::consts::PI }),
-        (KeyCode::Char('t'), ConstantEntry {name: "tau", value: std::f64::consts::TAU }),
+        (KeyCode::Char('2'), ConstantEntry {name: "sqrt of 2".to_string(), value: std::f64::consts::SQRT_2 }),
+        (KeyCode::Char('e'), ConstantEntry {name: "e".to_string(), value: std::f64::consts::E }),
+        (KeyCode::Char('g'), ConstantEntry {name: "golden ratio".to_string(), value: std::f64::consts::GOLDEN_RATIO }),
+        (KeyCode::Char('p'), ConstantEntry {name: "pi".to_string(), value: std::f64::consts::PI }),
+        (KeyCode::Char('t'), ConstantEntry {name: "tau".to_string(), value: std::f64::consts::TAU }),
     ])
 });
 
@@ -716,8 +718,9 @@ struct App {
     significant_digits: usize,
 
     help_content: String,
-    args: Args,
+    // args: Args,
     config: config::Config,
+    constants: HashMap<KeyCode, ConstantEntry>,
 }
 
 #[derive(Parser, Debug)]
@@ -728,13 +731,16 @@ struct Args {
 }
 
 impl App {
-    fn new() -> Self {
-        let args = Args::parse();
+    fn new<I>(args: I) -> Self
+    where
+        I: IntoIterator<Item = OsString>,
+    {
+        let args = Args::parse_from(args);
 
         // Load config from config file
         let config = config::Config::load(args.config.clone());
 
-        Self {
+        let mut instance = Self {
             mode: Mode::Calculating,
             exit_requested: false,
             size: Size::default(),
@@ -744,9 +750,14 @@ impl App {
             memory_registers: [calculator::ValuePair::default(); NUMBER_OF_REGISTERS],
             significant_digits: 2,
             help_content: String::new(),
-            args: args,
+            // args: args,
             config: config,
-        }
+            constants: CONSTANTS_KEYS_MAPPING.clone(),
+        };
+
+        instance.load_constants();
+
+        instance
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
@@ -781,7 +792,7 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match self.mode {
             Mode::SelectConstant => {
-                if let Some(ce) = CONSTANTS_KEYS_MAPPING.get(&key_event.code) {
+                if let Some(ce) = self.constants.get(&key_event.code) {
                     let mut vp = calculator::ValuePair::default();
                     vp.set_numeric_mode(NumericMode::Float);
                     vp.set_decimal(ce.value);
@@ -1021,6 +1032,25 @@ impl App {
         }
         text.render(location, buf);
     }
+
+    fn load_constants(&mut self) {
+        let Some(ref constants) = self.config.constants else {
+            // no constants in config
+            return;
+        };
+
+        for (key, constant) in constants.iter() {
+            let ce = ConstantEntry {
+                name: constant.name.clone(),
+                value: constant.value,
+            };
+/* kda_COMMENTED_OUT
+            let key_code = KeyCode::Char(key.chars().nth(0).expect("empty key name"));
+            self.constants.insert(key_code, ce);
+  kda_COMMENTED_OUT */
+            self.constants.insert(KeyCode::Char(key.chars().nth(0).expect("empty key name")), ce);
+        }
+    }
 }
 
 const DISPLAY_X: u16 = 0;
@@ -1174,7 +1204,7 @@ impl Widget for &App {
             },
             Mode::SelectConstant => {
                 let mut lines = Vec::<String>::new();
-                for (key, ce) in CONSTANTS_KEYS_MAPPING.iter() {
+                for (key, ce) in self.constants.iter() {
                     let KeyCode::Char(c) = key else {
                         panic!("ERROR: unexpected non-character key =>{}<= found in SelectContent display", key);
                     };
@@ -1263,21 +1293,22 @@ impl Widget for &App {
 }
 
 fn main() -> std::io::Result<()> {
-    let mut app = App::new();
+    let mut app = App::new(std::env::args_os());
     ratatui::run(|terminal| app.run(terminal))
 }
 
 #[cfg(test)]
 mod tests {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use insta::assert_snapshot;
+    use ratatui::{backend::TestBackend, Terminal};
+    use std::ffi::OsString;
+    use std::io::Write;
     use super::App;
     use super::KEYS_MAPPING;
     use super::Mode;
-    use insta::assert_snapshot;
-    use ratatui::{backend::TestBackend, Terminal};
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use super::help_content;
-    use tempfile::tempfile;
-    use std::io::Write;
+    use tempfile::NamedTempFile;
 
     use strum::IntoEnumIterator;
 
@@ -1287,9 +1318,19 @@ mod tests {
     }
 
     impl TestApp {
-        fn new() -> TestApp {
+        fn new() -> Self {
+            let empty_args = vec![];
             TestApp{
-                app: App::new(),
+                app: App::new(empty_args),
+                terminal: Terminal::new(TestBackend::new(40, 26)).unwrap(),
+            }
+        }
+        fn new_with_args<I>(args: I) -> Self
+        where
+            I: IntoIterator<Item = OsString>,
+        {
+            TestApp{
+                app: App::new(args),
                 terminal: Terminal::new(TestBackend::new(40, 26)).unwrap(),
             }
         }
@@ -1383,19 +1424,26 @@ mod tests {
     #[test]
     fn constants_from_config() -> std::io::Result<()> {
         // Prep the config
-        let config_content = r#"{
+        let config_content = r#"
             constants:
                 k:
                     name: kmh / mph
                     value: 0.621
-        }"#;
-        let mut file = tempfile()?;
+        "#;
+        let mut file = NamedTempFile::new()?;
         writeln!(file, "{}", config_content)?;
 
-        let mut ta = TestApp::new();
+        let args = vec![
+            "rtc".into(),
+            "-c".into(),
+            file.path().as_os_str().to_os_string(),
+        ];
+        let mut ta = TestApp::new_with_args(args);
+        ta.handle_key('#');
+        ta.render();
+        assert_snapshot!(ta.backend());
 
         Ok(())
-
     }
 
 }

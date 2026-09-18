@@ -8,13 +8,13 @@ use std::env;
 
 #[derive(Debug, Deserialize)]
 pub struct Constant {
-    name: String,
-    value: f64,
+    pub name: String,
+    pub value: f64,
 }
 
 #[derive(Default, Debug, Deserialize)]
 pub struct Config {
-    constants: Option<HashMap<String, Constant>>,
+    pub constants: Option<HashMap<String, Constant>>,
 }
 
 impl Config {
