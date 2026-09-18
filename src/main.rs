@@ -3,11 +3,12 @@ use ratatui::{
     DefaultTerminal, Frame,
     prelude::{Line, Position, Size, Text},
 };
-use ratatui::layout::Rect;
+use clap::Parser;
 use ratatui::buffer::Buffer;
-use ratatui::widgets::Widget;
+use ratatui::layout::Rect;
 use ratatui::widgets::Block;
 use ratatui::widgets::BorderType;
+use ratatui::widgets::Widget;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use strum_macros::EnumIter;
@@ -715,10 +716,24 @@ struct App {
     significant_digits: usize,
 
     help_content: String,
+    args: Args,
+    config: config::Config,
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    config: Option<String>,
 }
 
 impl App {
     fn new() -> Self {
+        let args = Args::parse();
+
+        // Load config from config file
+        let config = config::Config::load(args.config.clone());
+
         Self {
             mode: Mode::Calculating,
             exit_requested: false,
@@ -729,15 +744,12 @@ impl App {
             memory_registers: [calculator::ValuePair::default(); NUMBER_OF_REGISTERS],
             significant_digits: 2,
             help_content: String::new(),
+            args: args,
+            config: config,
         }
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-        // TODO: add command line argument handling (clap)
-
-        // Load config from config file
-        let config = config::Config::load(None);
-
         terminal.clear()?;
         self.size = terminal.size()?;
 
@@ -1251,7 +1263,8 @@ impl Widget for &App {
 }
 
 fn main() -> std::io::Result<()> {
-    ratatui::run(|terminal| App::new().run(terminal))
+    let mut app = App::new();
+    ratatui::run(|terminal| app.run(terminal))
 }
 
 #[cfg(test)]
@@ -1262,7 +1275,9 @@ mod tests {
     use insta::assert_snapshot;
     use ratatui::{backend::TestBackend, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-    use crate::help_content;
+    use super::help_content;
+    use tempfile::tempfile;
+    use std::io::Write;
 
     use strum::IntoEnumIterator;
 
@@ -1366,9 +1381,21 @@ mod tests {
     }
 
     #[test]
-    fn constants_from_config() {
+    fn constants_from_config() -> std::io::Result<()> {
+        // Prep the config
         let config_content = r#"{
+            constants:
+                k:
+                    name: kmh / mph
+                    value: 0.621
         }"#;
+        let mut file = tempfile()?;
+        writeln!(file, "{}", config_content)?;
+
+        let mut ta = TestApp::new();
+
+        Ok(())
+
     }
 
 }
