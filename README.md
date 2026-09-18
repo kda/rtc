@@ -8,10 +8,6 @@ Text-based calculator written in Rust.
 [![MacOS](https://github.com/kda/rtc/actions/workflows/rust_on_macos.yml/badge.svg)](https://github.com/kda/rtc/actions/workflows/rust_on_macos.yml)
 
 # todo
-## refactor
--   re-write keys, help, names, consider using Fixed Arrays (to avoid all copying of iters, etc)
--   reconsider BigText using width and height
-    - also, could be optional, based on command line
 ## features
 - 	add color (if terminal capable and/or if flag)
 - 	check terminal size at startup for available space (exit gracefully if insufficient.)
@@ -20,6 +16,9 @@ Text-based calculator written in Rust.
 -   add 'V' to show version
 -   detect and enforce maximum length of entry of value
 -   consider a help screen which labels the accumulator and pending operation and current value (quick tour?)
+## refactor
+-   reconsider BigText using width and height
+    - also, could be optional, based on command line
 ## bug
 -   conversion breakages:
     -   Octal -> Hex does not convert accumulator
@@ -29,8 +28,6 @@ Text-based calculator written in Rust.
     -   load constant E when in integer mode, then switch to decimal (no digits right of decimal point)
     -   load constant E when in decimal mode with 2 fixed, then switch to fixed 9 (all zeroes in digits 3-9)
 ## command line
--   add clap to support version and other command line flags
--   support -V for version
 -   confirm quit request
 ## preferences (also, all available via command line)
 -   start in decimal or scientific mode (or integer (default))
