@@ -1,0 +1,13 @@
+# Example file with all supported possibilitieds documented
+# - YAML format
+
+
+# Constants section
+#   - Define constants that are useful.  If there are key collisions, then
+#     these win, otherwise they are simply added to the existing constants.
+#   - all parts are required
+# Example config:
+#   constants:
+#     k:
+#       name: kmh / mph
+#       value: 0.621

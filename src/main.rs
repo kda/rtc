@@ -13,6 +13,7 @@ use std::sync::LazyLock;
 use strum_macros::EnumIter;
 
 mod calculator;
+mod config;
 mod help_content;
 
 use calculator::Calculator;
@@ -732,6 +733,11 @@ impl App {
     }
 
     fn run(&mut self, terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+        // TODO: add command line argument handling (clap)
+
+        // Load config from config file
+        let config = config::Config::load(None);
+
         terminal.clear()?;
         self.size = terminal.size()?;
 
@@ -1358,4 +1364,11 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn constants_from_config() {
+        let config_content = r#"{
+        }"#;
+    }
+
 }
