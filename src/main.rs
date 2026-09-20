@@ -1264,7 +1264,7 @@ impl Widget for &App {
                 text.push_line(
                     Line::from(format!("Version {}", env!("CARGO_PKG_VERSION"))).centered());
                 text.push_line(Line::from("").centered());
-                text.push_line(Line::from("http://github.com/kda/rtc").centered());
+                text.push_line(Line::from("https://github.com/kda/rtc").centered());
                 text.render(location, buf);
             },
         }

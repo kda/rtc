@@ -2,6 +2,11 @@
 name = "rtc"
 version = "0.1.0"
 edition = "2024"
+description = "Rust Text Calculator"
+readme = "README.md"
+repository = "https://github.com/kda/rtc"
+license = "AGPL-3.0-only"
+license-file = "LICENSE"
 
 [dependencies]
 clap = { version = "4.6.7", features = ["derive"] }
