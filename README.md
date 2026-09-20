@@ -13,9 +13,9 @@ Text-based calculator written in Rust.
 - 	check terminal size at startup for available space (exit gracefully if insufficient.)
 -   display commas (modal, also consider EURO style (.  <-> ,)) (possibly detect based on locale?)
 -   develop tests to cover all features
--   add 'V' to show version
 -   detect and enforce maximum length of entry of value
 -   consider a help screen which labels the accumulator and pending operation and current value (quick tour?)
+-   add marker in display to show mode
 ## refactor
 -   reconsider BigText using width and height
     - also, could be optional, based on command line

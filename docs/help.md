@@ -181,6 +181,11 @@ Scientific  (S)
 
 Work in scientific mode.
 
+## V
+Version     (V)
+
+Show Version information about RTC.
+
 ## a
 a (base-16) (a)
 

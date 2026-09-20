@@ -34,6 +34,7 @@ enum Mode {
     AskingHelp,
     ShowHelp,
     ShowError,
+    ShowVersion,
 }
 
 type KeyOperation = fn(app: &mut App);
@@ -93,6 +94,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     (Mode::MemoryRecall, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                     (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                     (Mode::ShowError, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::ShowVersion, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                 ]),
                 help_heading: "escape",
                 name: Some("esc".to_string()),
@@ -341,6 +343,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                         (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::ShowHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                         (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                        (Mode::ShowVersion, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
                     ]),
                 help_heading: "bing",
                 ..Default::default()
@@ -497,6 +500,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
+        (KeyCode::Char('V'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| { app.mode = Mode::ShowVersion; }) as KeyOperation),
+                ]),
+                help_heading: "V",
+                ..Default::default()
+            }
+        ),
         (KeyCode::Char('a'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -603,6 +615,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
                     (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
                     (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::ShowVersion, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
                 ]),
                 help_heading: "q",
                 ..Default::default()
@@ -1133,14 +1146,15 @@ impl Widget for &App {
             .border_type(BorderType::Rounded)
             .render(location, buf);
 
+        location.x = 1;
+        location.y = DISPLAY_HEIGHT + 1;
+        location.width = DISPLAY_WIDTH - 2;
+        location.height = area.height - 1;
+
         // Valid keys (quick reference)
         match self.mode {
             Mode::Calculating => {
                 // Digits
-                location.x = 1;
-                location.y = DISPLAY_HEIGHT + 1;
-                location.width = DISPLAY_WIDTH - 2;
-                location.height = area.height - 1;
                 let mut text = Text::default();
                 let mut line = Line::default();
                 let mut digits: String =
@@ -1242,6 +1256,16 @@ impl Widget for &App {
             },
             Mode::ShowError => {
                 // nothing to show on keypad
+            },
+            Mode::ShowVersion => {
+                let mut text = Text::default();
+                text.push_line(Line::from("RTC").centered());
+                text.push_line(Line::from("Rust Text Calculator").centered());
+                text.push_line(
+                    Line::from(format!("Version {}", env!("CARGO_PKG_VERSION"))).centered());
+                text.push_line(Line::from("").centered());
+                text.push_line(Line::from("http://github.com/kda/rtc").centered());
+                text.render(location, buf);
             },
         }
 
@@ -1445,5 +1469,4 @@ mod tests {
 
         Ok(())
     }
-
 }
