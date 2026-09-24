@@ -47,7 +47,7 @@ struct KeyEntry<'a> {
 }
 
 // in order for the future
-//  [ESC]  ! " # $ [%] & ' ( ) , [- . /] [0-9] : ; < [=] > [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { | } ~ DEL
+//  [ESC]  ! " # $ [%] & ' ( ) , [- . /] [0-9] : ; [< = >] [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { | } ~ DEL
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
@@ -324,12 +324,38 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
+        (KeyCode::Char('<'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| {
+                         if app.calculator.get_numeric_mode() == NumericMode::Integer {
+                             app.apply_operation(Operation::LeftShift);
+                         }
+                     }) as KeyOperation),
+                ]),
+                help_heading: "left_angle",
+                ..Default::default()
+            }
+        ),
         (KeyCode::Char('='),
             KeyEntry {
                 mode_op: HashMap::from([
                      (Mode::Calculating, (|app| { app.apply_equals(); }) as KeyOperation),
                 ]),
                 help_heading: "equals",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('>'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| {
+                         if app.calculator.get_numeric_mode() == NumericMode::Integer {
+                             app.apply_operation(Operation::RightShift);
+                         }
+                     }) as KeyOperation),
+                ]),
+                help_heading: "right_angle",
                 ..Default::default()
             }
         ),
@@ -689,6 +715,8 @@ const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
         (Operation::Multiply, "*"),
         (Operation::Divide, "/"),
         (Operation::Modulo, "%"),
+        (Operation::LeftShift, "<"),
+        (Operation::RightShift, ">"),
     ])
 });
 
@@ -1171,6 +1199,10 @@ impl Widget for &App {
                 // Basic Operations
                 line = Line::default();
                 line.push_span("+ - * / %");
+                match self.calculator.get_numeric_mode() {
+                    NumericMode::Integer => { line.push_span(" < >"); },
+                    _ => {},
+                }
                 text.push_line(line.centered());
 
                 // Numeric Base
@@ -1323,15 +1355,18 @@ fn main() -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use insta::assert_snapshot;
     use ratatui::{backend::TestBackend, Terminal};
     use std::ffi::OsString;
     use std::io::Write;
+/* kda_COMMENTED_OUT
     use super::App;
     use super::KEYS_MAPPING;
     use super::Mode;
     use super::help_content;
+  kda_COMMENTED_OUT */
     use tempfile::NamedTempFile;
 
     use strum::IntoEnumIterator;
@@ -1442,6 +1477,13 @@ mod tests {
                     "key =>{}<= does not have a mapping for mode =>{:?}<=",
                     key, mode);
             }
+        }
+    }
+
+    #[test]
+    fn check_operation_names() {
+        for op in calculator::Operation::iter() {
+            assert!(OPERATION_NAMES.contains_key(&op), "Operation does not have a name ({:?})", op);
         }
     }
 

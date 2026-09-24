@@ -116,10 +116,20 @@ Nine    (9)
 
 Enter the number 9.
 
+## left_angle
+Left Shift  (<)
+
+Shift the bits left.
+
 ## equals
-Equals  (=)
+Equals      (=)
 
 Conduct the calculation using the pending operation and accumulator.
+
+## right_angle
+Right Shift (>)
+
+Shift the bits right.
 
 ## bing
 Help    (?)

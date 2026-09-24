@@ -47,3 +47,9 @@ Text-based calculator written in Rust.
     - Octant size did not render correctly
     - Sextant did not either
     - Quadrant was too big
+
+
+# Developer hints
+-   Insta Review
+    -   `cargo install cargo-insta`
+    -   `cargo insta review`

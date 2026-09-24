@@ -1,10 +1,14 @@
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+use strum_macros::EnumIter;
+
+#[derive(Clone, Copy, Debug, EnumIter, Eq, Hash, PartialEq)]
 pub enum Operation {
     Add,
     Subtract,
     Multiply,
     Divide,
     Modulo,
+    LeftShift,
+    RightShift,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -87,6 +91,12 @@ impl Calculator {
                             return Err(Error::DivideByZero);
                         }
                         self.state.value %= value
+                    }
+                    Operation::LeftShift => {
+                        self.state.value = self.state.value << value
+                    }
+                    Operation::RightShift => {
+                        self.state.value = self.state.value >> value
                     }
                 }
             } else {
@@ -219,6 +229,36 @@ impl RemAssign<ValuePair> for ValuePair {
         } else {
             self.set_decimal(self.decimal % other.decimal);
         }
+    }
+}
+
+use std::ops::Shl;
+impl Shl<ValuePair> for ValuePair {
+    type Output = Self;
+    fn shl(mut self, other: ValuePair) -> Self::Output {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(self.integer << other.integer);
+/* kda_COMMENTED_OUT
+        } else {
+            self.set_decimal(self.decimal << other.decimal);
+  kda_COMMENTED_OUT */
+        }
+        self
+    }
+}
+
+use std::ops::Shr;
+impl Shr<ValuePair> for ValuePair {
+    type Output = Self;
+    fn shr(mut self, other: ValuePair) -> Self::Output {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(self.integer >> other.integer);
+/* kda_COMMENTED_OUT
+        } else {
+            self.set_decimal(self.decimal >> other.decimal);
+  kda_COMMENTED_OUT */
+        }
+        self
     }
 }
 
