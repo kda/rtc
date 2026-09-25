@@ -7,10 +7,10 @@ use std::ffi::OsString;
 use clap::Parser;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::widgets::Block;
-use ratatui::widgets::BorderType;
-use ratatui::widgets::Widget;
+use ratatui::widgets::{Block, BorderType, Widget};
+use simplelog::{Config, LevelFilter, WriteLogger};
 use std::collections::HashMap;
+use std::fs::File;
 use std::sync::LazyLock;
 use strum_macros::EnumIter;
 
@@ -853,6 +853,8 @@ struct App {
 struct Args {
     #[arg(short, long)]
     config: Option<String>,
+    #[arg(short, long)]
+    debug: bool,
 }
 
 impl App {
@@ -864,6 +866,11 @@ impl App {
 
         // Load config from config file
         let config = config::Config::load(args.config.clone());
+
+        if args.debug {
+            let log_file = File::create("rtc_debug.log").unwrap();
+            WriteLogger::init(LevelFilter::Debug, Config::default(), log_file).unwrap();
+        }
 
         let mut instance = Self {
             mode: Mode::Calculating,
@@ -1008,7 +1015,7 @@ impl App {
         //self.parse_and_update_accumulator();
     }
 
-    // TODO: consider merging with apply_operations
+    // TODO: consider merging with apply_operation
     fn apply_equals(&mut self) {
         if let Err(_) = self.calculator.update_value() {
             self.mode = Mode::ShowError;
@@ -1433,6 +1440,7 @@ mod tests {
     use super::*;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use insta::assert_snapshot;
+    use log::{info};
     use ratatui::{backend::TestBackend, Terminal};
     use std::ffi::OsString;
     use std::io::Write;
@@ -1519,10 +1527,8 @@ mod tests {
                 if help.is_empty() {
                     help_missing = true;
                     println!("ERROR: empty help found for =>{}<=", ke.help_heading);
-/* kda_COMMENTED_OUT
                 } else {
-                    println!("INFO: help found for =>{}<= =>{}<=", ke.help_heading, help);
-  kda_COMMENTED_OUT */
+                    info!("INFO: help found for =>{}<= =>{}<=", ke.help_heading, help);
                 }
             } else {
                 help_missing = true;
