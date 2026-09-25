@@ -207,6 +207,13 @@ Version     (V)
 
 Show Version information about RTC.
 
+## hat
+Bit-wise Xor   (^)
+
+Apply the XOR operator.
+
+Only works in integer (wholenumber) mode.
+
 ## a
 a (base-16) (a)
 
@@ -237,6 +244,13 @@ f (base-16) (f)
 
 Enter the hexadecimal number f.
 
+## n
+Bit-wise Xnor    (n)
+
+Apply the Xnor operator.
+
+Only works in integer (wholenumber) mode.
+
 ## q
 Quit    (q)
 
@@ -252,9 +266,16 @@ Store   (s)
 
 Store the current value in a memory register.
 
-## Or
+## or
 Bit-wise Or     (|)
 
 Apply the AND operator.
+
+Only works in integer (wholenumber) mode.
+
+## tilde
+Invert      (~)
+
+Invert the bits of the current value.
 
 Only works in integer (wholenumber) mode.

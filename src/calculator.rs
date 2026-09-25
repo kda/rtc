@@ -11,6 +11,9 @@ pub enum Operation {
     Or,
     LeftShift,
     RightShift,
+    Invert,
+    Xor,
+    Xnor,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -100,11 +103,21 @@ impl Calculator {
                     Operation::Or => {
                         self.state.value |= value
                     }
+                    Operation::Xor => {
+                        self.state.value ^= value
+                    }
+                    Operation::Xnor => {
+                        // Keep these as 2 separate operations to only implement BitXorAssign
+                        self.state.value ^= value;
+                        self.state.value = !self.state.value
+                    }
                     Operation::LeftShift => {
                         self.state.value <<= value
                     }
                     Operation::RightShift => {
                         self.state.value <<= value
+                    }
+                    Operation::Invert => {
                     }
                 }
             } else {
@@ -113,8 +126,18 @@ impl Calculator {
 
             // clean up
             self.state.accumulator = None;
-            self.state.pending_operation = None;
+        } else {
+            // No accumulator operations
+            if let Some(operation) = &self.state.pending_operation {
+                match operation {
+                    Operation::Invert => {
+                        self.state.value = !self.state.value;
+                    }
+                    _ => {}
+                }
+            }
         }
+        self.state.pending_operation = None;
         Ok(())
     }
 
@@ -276,18 +299,25 @@ impl ShrAssign<ValuePair> for ValuePair {
     }
 }
 
-/* kda_COMMENTED_OUT
-use std::ops::Shr;
-impl Shr<ValuePair> for ValuePair {
-    type Output = Self;
-    fn shr(mut self, other: ValuePair) -> Self::Output {
+use std::ops::BitXorAssign;
+impl BitXorAssign<ValuePair> for ValuePair {
+    fn bitxor_assign(&mut self, other: ValuePair) {
         if self.numeric_mode == NumericMode::Integer {
-            self.set_integer(self.integer >> other.integer);
+            self.set_integer(self.integer ^ other.integer);
+        }
+    }
+}
+
+use std::ops::Not;
+impl Not for ValuePair {
+    type Output = Self;
+    fn not(mut self) -> Self::Output {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(!self.integer);
         }
         self
     }
 }
-  kda_COMMENTED_OUT */
 
 #[derive(Debug, Default)]
 pub struct State {

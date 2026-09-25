@@ -47,7 +47,7 @@ struct KeyEntry<'a> {
 }
 
 // in order for the future
-//  [ESC]  ! " # $ [% &] ' ( ) , [- . /] [0-9] : ; [< = >] [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { [|] } ~ DEL
+//  [ESC]  ! " # $ [% &] ' ( ) , [- . /] [0-9] : ; [< = >] [?] @ [A-Z] [ \ [^] _ ` [a-z] { [|] } [~] DEL
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
@@ -414,6 +414,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                     (Mode::Calculating, (|app| {
+                        if app.accumulator.is_empty() {
+                            app.calculator.set_pending_operation(Operation::Multiply);
+                            app.accumulator.push_str("-1");
+                            app.parse_and_update_accumulator();
+                            app.apply_equals();
+                            return;
+                        }
+                        // TODO: reconsider how to do this leveraging Operation::Multiply (keep the
+                        // math in calculator.rs)
                         if app.calculator.get_numeric_mode() == NumericMode::Scientific {
                             if let Some(index) = app.accumulator.find('e') {
                                 if let Some(sign) = app.accumulator.chars().nth(index + 1) {
@@ -548,6 +557,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
+        (KeyCode::Char('^'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Xor); }) as KeyOperation),
+                ]),
+                help_heading: "hat",
+                ..Default::default()
+            }
+        ),
         (KeyCode::Char('a'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -626,6 +644,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
+        (KeyCode::Char('n'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Xnor); }) as KeyOperation),
+                ]),
+                help_heading: "n",
+                ..Default::default()
+            }
+        ),
         (KeyCode::Char('q'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -669,7 +696,34 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                          }
                      }) as KeyOperation),
                 ]),
-                help_heading: "Or",
+                help_heading: "or",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('~'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| {
+                        if app.calculator.get_numeric_mode() == NumericMode::Integer {
+                            if app.accumulator.is_empty() {
+                                app.calculator.set_pending_operation(Operation::Invert);
+                                app.apply_equals();
+                                return;
+                            }
+                            match app.calculator.state.get_accumulator() {
+                                Some(mut vp) => {
+                                    vp.set_integer(!vp.get_integer());
+                                    app.calculator.set_integer_accumulator(vp.get_integer());
+                                    app.accumulator = app.format_value_pair(vp);
+                                },
+                                None => {
+                                    panic!("no accumulator in calculator when expected");
+                                }
+                            }
+                        }
+                     }) as KeyOperation),
+                ]),
+                help_heading: "tilde",
                 ..Default::default()
             }
         ),
@@ -743,6 +797,9 @@ const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
         (Operation::Modulo, "%"),
         (Operation::And, "&"),
         (Operation::Or, "|"),
+        (Operation::Xor, "^"),
+        (Operation::Xnor, "n"),
+        (Operation::Invert, "~"),
         (Operation::LeftShift, "<"),
         (Operation::RightShift, ">"),
     ])
@@ -1113,10 +1170,6 @@ impl App {
                 name: constant.name.clone(),
                 value: constant.value,
             };
-/* kda_COMMENTED_OUT
-            let key_code = KeyCode::Char(key.chars().nth(0).expect("empty key name"));
-            self.constants.insert(key_code, ce);
-  kda_COMMENTED_OUT */
             self.constants.insert(KeyCode::Char(key.chars().nth(0).expect("empty key name")), ce);
         }
     }
@@ -1228,7 +1281,7 @@ impl Widget for &App {
                 line = Line::default();
                 line.push_span("+ - * / %");
                 match self.calculator.get_numeric_mode() {
-                    NumericMode::Integer => { line.push_span("    & | < >"); },
+                    NumericMode::Integer => { line.push_span("    & | ^ n ~ < >"); },
                     _ => {},
                 }
                 text.push_line(line.centered());
@@ -1389,12 +1442,6 @@ mod tests {
     use ratatui::{backend::TestBackend, Terminal};
     use std::ffi::OsString;
     use std::io::Write;
-/* kda_COMMENTED_OUT
-    use super::App;
-    use super::KEYS_MAPPING;
-    use super::Mode;
-    use super::help_content;
-  kda_COMMENTED_OUT */
     use tempfile::NamedTempFile;
 
     use strum::IntoEnumIterator;

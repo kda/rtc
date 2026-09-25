@@ -10,8 +10,6 @@ Text-based calculator written in Rust.
 # todo
 ## features
 -   calc
-    -   invert bits (not)
-    -   XOR, XNOR
     -   absolute
     -   trunc
     -   frac
@@ -22,6 +20,9 @@ Text-based calculator written in Rust.
 -   detect and enforce maximum length of entry of value
 -   consider a help screen which labels the accumulator and pending operation and current value (quick tour?)
 -   add marker in display to show mode
+-   possibly show first line of display: summary of last action executed
+-   have history of operations, and rewind and fast-forward
+-   add 'x' for multiply
 ## refactor
 -   reconsider BigText using width and height
     - also, could be optional, based on command line
@@ -32,6 +33,7 @@ Text-based calculator written in Rust.
     -   load constant E when in integer mode, then switch to decimal (no digits right of decimal point)
     -   load constant E when in decimal mode with 2 fixed, then switch to fixed 9 (all zeroes in digits 3-9)
     -   possible solution: store ValuePair with String accumulator
+-   first tilde after equals does not change display (not accumulator)
 ## command line
 -   confirm quit request
 ## preferences (also, all available via command line)
