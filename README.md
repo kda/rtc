@@ -9,6 +9,12 @@ Text-based calculator written in Rust.
 
 # todo
 ## features
+-   calc
+    -   invert bits (not)
+    -   XOR, XNOR
+    -   absolute
+    -   trunc
+    -   frac
 - 	add color (if terminal capable and/or if flag)
 - 	check terminal size at startup for available space (exit gracefully if insufficient.)
 -   display commas (modal, also consider EURO style (.  <-> ,)) (possibly detect based on locale?)
@@ -21,12 +27,11 @@ Text-based calculator written in Rust.
     - also, could be optional, based on command line
 ## bug
 -   conversion breakages:
-    -   Octal -> Hex does not convert accumulator
-    -   Octal (Decimal) (27) -> ??? (Decimal) (4067000000)
     -   Octal (Decimal) (27) -> ??? (Scientific) (crashes)
 -   entered value does not preserve digits: examples:
     -   load constant E when in integer mode, then switch to decimal (no digits right of decimal point)
     -   load constant E when in decimal mode with 2 fixed, then switch to fixed 9 (all zeroes in digits 3-9)
+    -   possible solution: store ValuePair with String accumulator
 ## command line
 -   confirm quit request
 ## preferences (also, all available via command line)
