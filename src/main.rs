@@ -1,15 +1,14 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{
-    DefaultTerminal, Frame,
-    prelude::{Line, Position, Size, Text},
-};
-use std::ffi::OsString;
 use clap::Parser;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use log::{debug, info};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
+use ratatui::prelude::{Line, Position, Size, Text};
 use ratatui::widgets::{Block, BorderType, Widget};
+use ratatui::{DefaultTerminal, Frame};
 use simplelog::{Config, LevelFilter, WriteLogger};
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::fs::File;
 use std::sync::LazyLock;
 use strum_macros::EnumIter;
@@ -704,8 +703,10 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
             KeyEntry {
                 mode_op: HashMap::from([
                      (Mode::Calculating, (|app| {
+                        debug!("handling tilde (~)");
                         if app.calculator.get_numeric_mode() == NumericMode::Integer {
                             if app.accumulator.is_empty() {
+                                debug!("accumulator is empty");
                                 app.calculator.set_pending_operation(Operation::Invert);
                                 app.apply_equals();
                                 return;
@@ -855,6 +856,8 @@ struct Args {
     config: Option<String>,
     #[arg(short, long)]
     debug: bool,
+    #[arg(short, long, default_value="rtc_debug.log")]
+    logfile: String,
 }
 
 impl App {
@@ -868,7 +871,7 @@ impl App {
         let config = config::Config::load(args.config.clone());
 
         if args.debug {
-            let log_file = File::create("rtc_debug.log").unwrap();
+            let log_file = File::create(args.logfile).unwrap();
             WriteLogger::init(LevelFilter::Debug, Config::default(), log_file).unwrap();
         }
 
@@ -1011,8 +1014,6 @@ impl App {
         }
         self.calculator.set_pending_operation(op);
         self.accumulator.clear();
-        // TODO: Is this required?
-        //self.parse_and_update_accumulator();
     }
 
     // TODO: consider merging with apply_operation
@@ -1231,6 +1232,7 @@ impl Widget for &App {
                 text.push_line(line);
 
                 // current value
+                debug!("render value");
                 text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
                 text.render(location, buf);
 
@@ -1440,7 +1442,6 @@ mod tests {
     use super::*;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use insta::assert_snapshot;
-    use log::{info};
     use ratatui::{backend::TestBackend, Terminal};
     use std::ffi::OsString;
     use std::io::Write;
