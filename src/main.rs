@@ -47,7 +47,7 @@ struct KeyEntry<'a> {
 }
 
 // in order for the future
-//  [ESC]  ! " # $ [%] & ' ( ) , [- . /] [0-9] : ; [< = >] [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { | } ~ DEL
+//  [ESC]  ! " # $ [% &] ' ( ) , [- . /] [0-9] : ; [< = >] [?] @ [A-Z] [ \ ] ^ _ ` [a-z] { [|] } ~ DEL
 
 const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
     HashMap::from([
@@ -113,17 +113,30 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('%'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Modulo); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Modulo); }) as KeyOperation),
+                ]),
                 help_heading: "percent",
+                ..Default::default()
+            }
+        ),
+        (KeyCode::Char('&'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                     (Mode::Calculating, (|app| {
+                         if app.calculator.get_numeric_mode() == NumericMode::Integer {
+                             app.apply_operation(Operation::And);
+                         }
+                     }) as KeyOperation),
+                ]),
+                help_heading: "and",
                 ..Default::default()
             }
         ),
         (KeyCode::Char('*'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Multiply); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Multiply); }) as KeyOperation),
+                ]),
                 help_heading: "asterisk",
                 ..Default::default()
             }
@@ -131,8 +144,8 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('+'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Add); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Add); }) as KeyOperation),
+                ]),
                 help_heading: "plus",
                 ..Default::default()
             }
@@ -140,8 +153,8 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('-'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Subtract); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Subtract); }) as KeyOperation),
+                ]),
                 help_heading: "minus",
                 ..Default::default()
             }
@@ -164,8 +177,8 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('/'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.apply_operation(Operation::Divide); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.apply_operation(Operation::Divide); }) as KeyOperation),
+                ]),
                 help_heading: "slash",
                 ..Default::default()
             }
@@ -173,11 +186,11 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('0'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.accumulate("0"); }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(0); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.accumulate("0"); }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(0); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(0); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(0); }) as KeyOperation),
+                ]),
                 help_heading: "0",
                 ..Default::default()
             }
@@ -185,11 +198,11 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('1'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.accumulate("1"); }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(1); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(1); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(1); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.accumulate("1"); }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(1); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(1); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(1); }) as KeyOperation),
+                ]),
                 help_heading: "1",
                 ..Default::default()
             }
@@ -197,15 +210,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('2'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("2");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(2); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(2); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(2); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("2");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(2); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(2); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(2); }) as KeyOperation),
+                ]),
                 help_heading: "2",
                 ..Default::default()
             }
@@ -213,15 +226,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('3'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("3");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(3); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(3); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(3); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("3");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(3); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(3); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(3); }) as KeyOperation),
+                ]),
                 help_heading: "3",
                 ..Default::default()
             }
@@ -229,15 +242,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('4'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("4");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(4); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(4); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(4); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("4");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(4); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(4); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(4); }) as KeyOperation),
+                ]),
                 help_heading: "4",
                 ..Default::default()
             }
@@ -245,15 +258,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('5'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("5");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(5); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(5); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(5); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("5");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(5); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(5); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(5); }) as KeyOperation),
+                ]),
                 help_heading: "5",
                 ..Default::default()
             }
@@ -261,15 +274,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('6'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("6");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(6); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(6); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(6); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("6");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(6); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(6); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(6); }) as KeyOperation),
+                ]),
                 help_heading: "6",
                 ..Default::default()
             }
@@ -277,15 +290,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('7'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() != NumericBase::Binary {
-                                app.accumulate("7");
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(7); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(7); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(7); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() != NumericBase::Binary {
+                            app.accumulate("7");
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(7); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(7); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(7); }) as KeyOperation),
+                ]),
                 help_heading: "7",
                 ..Default::default()
             }
@@ -293,16 +306,16 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('8'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            match app.calculator.state.get_numeric_base() {
-                                NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("8"),
-                                _ => {},
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(8); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(8); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(8); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        match app.calculator.state.get_numeric_base() {
+                            NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("8"),
+                            _ => {},
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(8); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(8); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(8); }) as KeyOperation),
+                ]),
                 help_heading: "8",
                 ..Default::default()
             }
@@ -310,16 +323,16 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('9'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            match app.calculator.state.get_numeric_base() {
-                                NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("9"),
-                                _ => {},
-                            }
-                        }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| { app.set_significant_digits(9); }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| { app.memory_registers_store(9); }) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| { app.memory_registers_recall(9); }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        match app.calculator.state.get_numeric_base() {
+                            NumericBase::Decimal | NumericBase::Hexadecimal => app.accumulate("9"),
+                            _ => {},
+                        }
+                    }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.set_significant_digits(9); }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.memory_registers_store(9); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.memory_registers_recall(9); }) as KeyOperation),
+                ]),
                 help_heading: "9",
                 ..Default::default()
             }
@@ -362,15 +375,15 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('?'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
-                        (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::SelectConstant, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
-                        (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::ShowHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                        (Mode::ShowVersion, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    (Mode::SelectConstant, (|app| { app.mode = Mode::AskingHelp; }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    (Mode::ShowHelp, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    (Mode::ShowError, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                    (Mode::ShowVersion, (|app| {app.mode = Mode::AskingHelp;}) as KeyOperation),
+                ]),
                 help_heading: "bing",
                 ..Default::default()
             }
@@ -538,12 +551,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
         (KeyCode::Char('a'),
             KeyEntry {
                 mode_op: HashMap::from([
-                        (Mode::Calculating, (|app| {
-                            if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
-                                app.accumulate("a");
-                            }
-                        }) as KeyOperation),
-                    ]),
+                    (Mode::Calculating, (|app| {
+                        if app.calculator.state.get_numeric_base() == NumericBase::Hexadecimal {
+                            app.accumulate("a");
+                        }
+                    }) as KeyOperation),
+                ]),
                 help_heading: "a",
                 ..Default::default()
             }
@@ -613,6 +626,22 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
+        (KeyCode::Char('q'),
+            KeyEntry {
+                mode_op: HashMap::from([
+                    (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::SelectConstant, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
+                    (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
+                    (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                    (Mode::ShowVersion, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                ]),
+                help_heading: "q",
+                ..Default::default()
+            }
+        ),
         (KeyCode::Char('r'),
             KeyEntry {
                 mode_op: HashMap::from([
@@ -631,19 +660,16 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                 ..Default::default()
             }
         ),
-        (KeyCode::Char('q'),
+        (KeyCode::Char('|'),
             KeyEntry {
                 mode_op: HashMap::from([
-                    (Mode::Calculating, (|app| { app.request_exit(); }) as KeyOperation),
-                    (Mode::SignificantDigits, (|app| { app.request_exit(); }) as KeyOperation),
-                    (Mode::SelectConstant, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
-                    (Mode::MemoryStore, (|app| { app.request_exit(); }) as KeyOperation),
-                    (Mode::MemoryRecall, (|app| { app.request_exit(); }) as KeyOperation),
-                    (Mode::ShowHelp, (|app| { app.mode = Mode::Calculating; }) as KeyOperation),
-                    (Mode::ShowError, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
-                    (Mode::ShowVersion, (|app| {app.mode = Mode::Calculating;}) as KeyOperation),
+                     (Mode::Calculating, (|app| {
+                         if app.calculator.get_numeric_mode() == NumericMode::Integer {
+                             app.apply_operation(Operation::Or);
+                         }
+                     }) as KeyOperation),
                 ]),
-                help_heading: "q",
+                help_heading: "Or",
                 ..Default::default()
             }
         ),
@@ -715,6 +741,8 @@ const OPERATION_NAMES: LazyLock<HashMap<Operation, &str>> = LazyLock::new(|| {
         (Operation::Multiply, "*"),
         (Operation::Divide, "/"),
         (Operation::Modulo, "%"),
+        (Operation::And, "&"),
+        (Operation::Or, "|"),
         (Operation::LeftShift, "<"),
         (Operation::RightShift, ">"),
     ])
@@ -1200,7 +1228,7 @@ impl Widget for &App {
                 line = Line::default();
                 line.push_span("+ - * / %");
                 match self.calculator.get_numeric_mode() {
-                    NumericMode::Integer => { line.push_span(" < >"); },
+                    NumericMode::Integer => { line.push_span("    & | < >"); },
                     _ => {},
                 }
                 text.push_line(line.centered());

@@ -7,6 +7,8 @@ pub enum Operation {
     Multiply,
     Divide,
     Modulo,
+    And,
+    Or,
     LeftShift,
     RightShift,
 }
@@ -92,11 +94,17 @@ impl Calculator {
                         }
                         self.state.value %= value
                     }
+                    Operation::And => {
+                        self.state.value &= value
+                    }
+                    Operation::Or => {
+                        self.state.value |= value
+                    }
                     Operation::LeftShift => {
-                        self.state.value = self.state.value << value
+                        self.state.value <<= value
                     }
                     Operation::RightShift => {
-                        self.state.value = self.state.value >> value
+                        self.state.value <<= value
                     }
                 }
             } else {
@@ -232,35 +240,54 @@ impl RemAssign<ValuePair> for ValuePair {
     }
 }
 
-use std::ops::Shl;
-impl Shl<ValuePair> for ValuePair {
-    type Output = Self;
-    fn shl(mut self, other: ValuePair) -> Self::Output {
+use std::ops::BitAndAssign;
+impl BitAndAssign<ValuePair> for ValuePair {
+    fn bitand_assign(&mut self, other: ValuePair) {
         if self.numeric_mode == NumericMode::Integer {
-            self.set_integer(self.integer << other.integer);
-/* kda_COMMENTED_OUT
-        } else {
-            self.set_decimal(self.decimal << other.decimal);
-  kda_COMMENTED_OUT */
+            self.set_integer(self.integer & other.integer);
         }
-        self
     }
 }
 
+use std::ops::BitOrAssign;
+impl BitOrAssign<ValuePair> for ValuePair {
+    fn bitor_assign(&mut self, other: ValuePair) {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(self.integer | other.integer);
+        }
+    }
+}
+
+use std::ops::ShlAssign;
+impl ShlAssign<ValuePair> for ValuePair {
+    fn shl_assign(&mut self, other: ValuePair) {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(self.integer << other.integer);
+        }
+    }
+}
+
+use std::ops::ShrAssign;
+impl ShrAssign<ValuePair> for ValuePair {
+    fn shr_assign(&mut self, other: ValuePair) {
+        if self.numeric_mode == NumericMode::Integer {
+            self.set_integer(self.integer >> other.integer);
+        }
+    }
+}
+
+/* kda_COMMENTED_OUT
 use std::ops::Shr;
 impl Shr<ValuePair> for ValuePair {
     type Output = Self;
     fn shr(mut self, other: ValuePair) -> Self::Output {
         if self.numeric_mode == NumericMode::Integer {
             self.set_integer(self.integer >> other.integer);
-/* kda_COMMENTED_OUT
-        } else {
-            self.set_decimal(self.decimal >> other.decimal);
-  kda_COMMENTED_OUT */
         }
         self
     }
 }
+  kda_COMMENTED_OUT */
 
 #[derive(Debug, Default)]
 pub struct State {

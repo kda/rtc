@@ -41,6 +41,13 @@ Modulo      (%)
 
 Determine remainder in division, sometimes called modulo.
 
+## and
+Bit-wise And    (&)
+
+Apply the AND operator.
+
+Only works in integer (wholenumber) mode.
+
 ## asterisk
 Multiply    (*)
 
@@ -121,6 +128,8 @@ Left Shift  (<)
 
 Shift the bits left.
 
+Only works in integer (wholenumber) mode.
+
 ## equals
 Equals      (=)
 
@@ -130,6 +139,8 @@ Conduct the calculation using the pending operation and accumulator.
 Right Shift (>)
 
 Shift the bits right.
+
+Only works in integer (wholenumber) mode.
 
 ## bing
 Help    (?)
@@ -241,3 +252,9 @@ Store   (s)
 
 Store the current value in a memory register.
 
+## Or
+Bit-wise Or     (|)
+
+Apply the AND operator.
+
+Only works in integer (wholenumber) mode.
