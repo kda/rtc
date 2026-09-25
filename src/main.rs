@@ -731,13 +731,12 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
 });
 
 
-// TODO: rework this to be string on left as only used for display
-const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, Vec<char>>> = LazyLock::new(|| {
+const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
-        (NumericBase::Decimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
-        (NumericBase::Hexadecimal, vec!['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']),
-        (NumericBase::Octal, vec!['0', '1', '2', '3', '4', '5', '6', '7']),
-        (NumericBase::Binary, vec!['0', '1']),
+        (NumericBase::Decimal, "0 1 2 3 4 5 6 7 8 9"),
+        (NumericBase::Hexadecimal, "0 1 2 3 4 5 6 7 8 9 a b c d e f"),
+        (NumericBase::Octal, "0 1 2 3 4 5 6 7"),
+        (NumericBase::Binary, "0 1"),
     ])
 });
 
@@ -1116,10 +1115,7 @@ impl App {
         line = Line::default();
         text.push_line(line);
         line = Line::default();
-        let digits: String =
-            NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]
-            .iter().map(|c| format!(" {c}")).collect();
-        line.push_span(digits);
+        line.push_span(NUMERIC_BASE_ENTRY_KEYS[&NumericBase::Decimal]);
         text.push_line(line.centered());
         text.render(location, buf);
     }
@@ -1266,9 +1262,7 @@ impl Widget for &App {
                 // Digits
                 let mut text = Text::default();
                 let mut line = Line::default();
-                let mut digits: String =
-                    NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()]
-                    .iter().map(|c| format!(" {c}")).collect();
+                let mut digits = String::from(NUMERIC_BASE_ENTRY_KEYS[&self.calculator.state.get_numeric_base()]);
                 match self.calculator.get_numeric_mode() {
                     NumericMode::Integer => {}
                     NumericMode::Float => digits.push_str(" ."),
