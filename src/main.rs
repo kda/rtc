@@ -1,6 +1,6 @@
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use log::{debug, info};
+use log::{debug, info, trace};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Line, Position, Size, Text};
@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fs::File;
 use std::sync::LazyLock;
+use std::time::Duration;
 use strum_macros::EnumIter;
 
 mod calculator;
@@ -872,6 +873,7 @@ impl App {
 
         if args.debug {
             let log_file = File::create(args.logfile).unwrap();
+            // TODO: change 'debug' arg to be counted to bump to trace
             WriteLogger::init(LevelFilter::Debug, Config::default(), log_file).unwrap();
         }
 
@@ -901,7 +903,7 @@ impl App {
 
         while !self.exit_requested {
             terminal.draw(|frame| self.draw(frame))?;
-						self.handle_events()?;
+            self.handle_events()?;
         }
         Ok(())
     }
@@ -917,14 +919,19 @@ impl App {
             // it's important to check that the event is a key press event as
             // crossterm also emits key release and repeat events on Windows.
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                debug!("KeyEventKind::Press: found");
                 self.handle_key_event(key_event)
             }
-            _ => {}
+            // TODO: handle resize event to validate sufficient size
+            event => {
+                debug!("event::read() {:?}", event);
+            }
         };
         Ok(())
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
+        debug!("handle_key_event: called");
         match self.mode {
             Mode::SelectConstant => {
                 if let Some(ce) = self.constants.get(&key_event.code) {
@@ -1232,7 +1239,7 @@ impl Widget for &App {
                 text.push_line(line);
 
                 // current value
-                debug!("render value");
+                trace!("render value");
                 text.push_line(Line::raw(self.format_value_pair(self.calculator.state.get_value())).right_aligned());
                 text.render(location, buf);
 
