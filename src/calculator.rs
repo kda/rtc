@@ -21,7 +21,7 @@ pub enum Error {
     DivideByZero,
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum NumericBase {
     #[default] Decimal,
     Hexadecimal,
@@ -29,7 +29,7 @@ pub enum NumericBase {
     Binary,
 }
 
-#[derive(Copy, Clone, Debug, Default, Eq, Hash, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Default, EnumIter, Eq, Hash, PartialEq, Ord, PartialOrd)]
 pub enum NumericMode {
     #[default]Integer,
     Float,

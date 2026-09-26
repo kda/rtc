@@ -11,7 +11,9 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fs::File;
 use std::sync::LazyLock;
+use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+
 
 mod calculator;
 mod config;
@@ -43,6 +45,7 @@ struct KeyEntry<'a> {
     mode_op: HashMap<Mode, KeyOperation>,
     help_heading: &'a str,
     name: Option<String>,
+    hint: &'a str,
 }
 
 // in order for the future
@@ -395,6 +398,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "A",
+                hint: "dec",
                 ..Default::default()
             }
         ),
@@ -406,6 +410,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "B",
+                hint: "Bin",
                 ..Default::default()
             }
         ),
@@ -460,6 +465,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "D",
+                hint: "Dec",
                 ..Default::default()
             }
         ),
@@ -500,6 +506,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "H",
+                hint: "Hex",
                 ..Default::default()
             }
         ),
@@ -511,6 +518,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "I",
+                hint: "int",
                 ..Default::default()
             }
         ),
@@ -533,6 +541,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "O",
+                hint: "Oct",
                 ..Default::default()
             }
         ),
@@ -544,6 +553,7 @@ const KEYS_MAPPING: LazyLock<HashMap<KeyCode, KeyEntry>> = LazyLock::new(|| {
                     }) as KeyOperation),
                 ]),
                 help_heading: "S",
+                hint: "sci",
                 ..Default::default()
             }
         ),
@@ -750,16 +760,6 @@ const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, char>> = LazyLock::new(||
     ])
 });
 
-// TODO: deprecate this in favor of the key_hint field of KeyEntry.
-const NUMERIC_BASE_HELP: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
-    HashMap::from([
-        (NumericBase::Decimal, "Dec"),
-        (NumericBase::Hexadecimal, "Hex"),
-        (NumericBase::Octal, "Oct"),
-        (NumericBase::Binary, "Bin"),
-    ])
-});
-
 const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericBase::Decimal, "DEC (10)"),
@@ -777,7 +777,6 @@ const NUMERIC_MODE_KEYS: LazyLock<HashMap<NumericMode, char>> = LazyLock::new(||
     ])
 });
 
-// TODO: deprecate this in favor of the key_hint field of KeyEntry.
 const NUMERIC_MODE_NAMES: LazyLock<HashMap<NumericMode, &str>> = LazyLock::new(|| {
     HashMap::from([
         (NumericMode::Integer, "int"),
@@ -1296,13 +1295,14 @@ impl Widget for &App {
                 // Numeric Base
                 line = Line::default();
                 line.push_span("base =>");
-                let nbh_binding = NUMERIC_BASE_HELP;
-                let mut bases: Vec<_> = nbh_binding.keys().collect();
-                bases.sort_unstable();
-                for base in bases {
-                    if *base != self.calculator.state.get_numeric_base() {
-                        line.push_span(
-                            format!(" {}:{}", NUMERIC_BASE_KEYS[base],NUMERIC_BASE_HELP[base]));
+                for base in calculator::NumericBase::iter() {
+                    if base != self.calculator.state.get_numeric_base() {
+                        let key = NUMERIC_BASE_KEYS[&base];
+                        if let Some(ke) = KEYS_MAPPING.get(&KeyCode::Char(key)) {
+                            line.push_span(format!(" {}:{}", key, ke.hint));
+                        } else {
+                            panic!("unable to locate KeyEntry for =>{}<=", key);
+                        };
                     }
                 }
                 text.push_line(line.left_aligned());
@@ -1310,13 +1310,14 @@ impl Widget for &App {
                 // Numeric Mode
                 line = Line::default();
                 line.push_span("mode =>");
-                let nmn_binding = NUMERIC_MODE_NAMES;
-                let mut modes: Vec<_> = nmn_binding.keys().collect();
-                modes.sort_unstable();
-                for mode in modes {
-                    if *mode != self.calculator.get_numeric_mode() {
-                        line.push_span(
-                            format!(" {}:{}", NUMERIC_MODE_KEYS[mode], NUMERIC_MODE_NAMES[mode]));
+                for mode in calculator::NumericMode::iter() {
+                    if mode != self.calculator.get_numeric_mode() {
+                        let key = NUMERIC_MODE_KEYS[&mode];
+                        if let Some(ke) = KEYS_MAPPING.get(&KeyCode::Char(key)) {
+                            line.push_span(format!(" {}:{}", key, ke.hint));
+                        } else {
+                            panic!("unable to locate KeyEntry for =>{}<=", key);
+                        };
                     }
                 }
                 if self.calculator.get_numeric_mode() != NumericMode::Integer {
@@ -1442,8 +1443,6 @@ mod tests {
     use std::ffi::OsString;
     use std::io::Write;
     use tempfile::NamedTempFile;
-
-    use strum::IntoEnumIterator;
 
     struct TestApp {
         app: App,
