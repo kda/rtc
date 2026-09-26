@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fs::File;
 use std::sync::LazyLock;
-use std::time::Duration;
 use strum_macros::EnumIter;
 
 mod calculator;
@@ -742,13 +741,12 @@ const NUMERIC_BASE_ENTRY_KEYS: LazyLock<HashMap<NumericBase, &str>> = LazyLock::
     ])
 });
 
-// TODO: Invert this to expedite rendering hints screen
-const NUMERIC_BASE_KEYS: LazyLock<HashMap<char, NumericBase>> = LazyLock::new(|| {
+const NUMERIC_BASE_KEYS: LazyLock<HashMap<NumericBase, char>> = LazyLock::new(|| {
     HashMap::from([
-        ('D', NumericBase::Decimal),
-        ('H', NumericBase::Hexadecimal),
-        ('O', NumericBase::Octal),
-        ('B', NumericBase::Binary),
+        (NumericBase::Decimal, 'D'),
+        (NumericBase::Hexadecimal, 'H'),
+        (NumericBase::Octal, 'O'),
+        (NumericBase::Binary, 'B'),
     ])
 });
 
@@ -771,12 +769,11 @@ const NUMERIC_BASE_NAMES: LazyLock<HashMap<NumericBase, &str>> = LazyLock::new(|
     ])
 });
 
-// TODO: Invert this to expedite rendering hints screen
-const NUMERIC_MODE_KEYS: LazyLock<HashMap<char, NumericMode>> = LazyLock::new(|| {
+const NUMERIC_MODE_KEYS: LazyLock<HashMap<NumericMode, char>> = LazyLock::new(|| {
     HashMap::from([
-        ('I', NumericMode::Integer),
-        ('A', NumericMode::Float),
-        ('S', NumericMode::Scientific),
+        (NumericMode::Integer, 'I'),
+        (NumericMode::Float, 'A'),
+        (NumericMode::Scientific, 'S'),
     ])
 });
 
@@ -1304,12 +1301,8 @@ impl Widget for &App {
                 bases.sort_unstable();
                 for base in bases {
                     if *base != self.calculator.state.get_numeric_base() {
-                        let Some(&key) = NUMERIC_BASE_KEYS.iter()
-                            .find(|&(_, val_base)| val_base == base)
-                            .map(|(key, _)| key) else {
-                                panic!("unable to find numeric base");
-                            };
-                        line.push_span(format!(" {}:{}", key, NUMERIC_BASE_HELP[base]));
+                        line.push_span(
+                            format!(" {}:{}", NUMERIC_BASE_KEYS[base],NUMERIC_BASE_HELP[base]));
                     }
                 }
                 text.push_line(line.left_aligned());
@@ -1322,12 +1315,8 @@ impl Widget for &App {
                 modes.sort_unstable();
                 for mode in modes {
                     if *mode != self.calculator.get_numeric_mode() {
-                        let Some(&key) = NUMERIC_MODE_KEYS.iter()
-                                .find(|&(_, val_mode)| val_mode == mode)
-                                .map(|(key, _)| key) else {
-                                    panic!("unable to find numeric mode");
-                                };
-                        line.push_span(format!(" {key}:{}", NUMERIC_MODE_NAMES[mode]));
+                        line.push_span(
+                            format!(" {}:{}", NUMERIC_MODE_KEYS[mode], NUMERIC_MODE_NAMES[mode]));
                     }
                 }
                 if self.calculator.get_numeric_mode() != NumericMode::Integer {
